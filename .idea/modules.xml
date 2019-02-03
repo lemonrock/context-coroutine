@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/terminate.iml" filepath="$PROJECT_DIR$/terminate.iml" />
+      <module fileurl="file://$PROJECT_DIR$/context-coroutine.iml" filepath="$PROJECT_DIR$/context-coroutine.iml" />
     </modules>
   </component>
 </project>
