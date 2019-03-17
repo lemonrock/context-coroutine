@@ -9,7 +9,7 @@ use ::libc::c_int;
 use ::libc::getrlimit;
 use ::libc::MAP_ANON;
 use ::libc::MAP_FAILED;
-use ::libc::MAP_STACK;
+#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))] use ::libc::MAP_STACK;
 use ::libc::MAP_NORESERVE;
 use ::libc::MAP_PRIVATE;
 use ::libc::mmap;

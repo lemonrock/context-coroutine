@@ -47,6 +47,8 @@ impl ProtectedStack
 		let size_including_guard_page_but_might_be_bigger_than_maximum_stack_size = Self::round_up_to_page_size(size, page_size) + page_size;
 		let size_including_guard_page = min(size_including_guard_page_but_might_be_bigger_than_maximum_stack_size, Self::maximum_stack_size());
 
+		#[cfg(not(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux", target_os = "openbsd")))] const MAP_STACK: i32 = 0;
+
 		let bottom_including_guard_page = unsafe { mmap(null_mut(), size_including_guard_page, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_STACK | MAP_NORESERVE, NoFileDescriptor, NoOffset) };
 		if unlikely!(bottom_including_guard_page == MAP_FAILED)
 		{
