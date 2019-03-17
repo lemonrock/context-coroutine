@@ -7,43 +7,58 @@
 #![allow(non_camel_case_types)]
 #![deny(missing_docs)]
 #![deny(unreachable_patterns)]
+#![feature(asm)]
+#![feature(core_intrinsics)]
+#![feature(global_asm)]
+#![feature(naked_functions)]
 
 
 //! #context-coroutine
-//! 
-//! This is a simple set of extensions to the [context](https://github.com/zonyitoo/context-rs) crate to provide stackful coroutines.
 //!
-//! The intended use case is mostly for read and write (input and output, I/O) with socket file descriptors.
+//! Provides coroutines using the trait `Coroutine`.
 //!
+//! Coroutines use a separate, special stack.
+//!
+//! Implement this trait and then call `Coroutine::start_coroutine()`, passing in start arguments and a stack.
+//!
+//! For a simple coroutine, use the stack `stacks::ProtectedStack`.
+//!
+//! The module `context` provides lower-level logic to use as a building block for things other than coroutines, for example, fibres.
+//!
+//! This crate was originally a simple set of extensions to the [context](https://github.com/zonyitoo/context-rs) crate to provide stackful coroutines.
 //! The developers are not associated with the authors of [context](https://github.com/zonyitoo/context-rs) but are extremely grateful for the work they've put into to a superb piece of code.
 
 
-extern crate context;
+extern crate libc;
+extern crate libc_extra;
+#[macro_use] extern crate likely;
 
 
-use ::context::context::*;
-use ::context::stack::*;
-use ::std::fmt;
-use ::std::fmt::Debug;
-use ::std::fmt::Formatter;
+use self::context::*;
+use self::stacks::*;
+use ::std::intrinsics::unreachable;
 use ::std::marker::PhantomData;
-use ::std::ops::Deref;
+use ::std::mem::uninitialized;
 use ::std::panic::*;
 use ::std::ptr::NonNull;
-use ::std::ptr::read;
 use ::std::thread;
 
 
 include!("ChildOutcome.rs");
 include!("Coroutine.rs");
+include!("CoroutineInstance.rs");
 include!("ParentInstructingChild.rs");
-include!("ResumeOnTopFunction.rs");
 include!("ResumeOutcome.rs");
-include!("SimpleStack.rs");
-include!("StackAndTypeSafeTransfer.rs");
-include!("StartedStackAndTypeSafeTransfer.rs");
+include!("StartedCoroutineInstance.rs");
 include!("StartOutcome.rs");
-include!("TransferableData.rs");
-include!("TransferExt.rs");
-include!("TypeSafeTransfer.rs");
 include!("Yielder.rs");
+
+
+/// Context; derived from `Boost.Context` and [context-rs](https://github.com/zonyitoo/context-rs).
+///
+/// Use the `TypeSafeTransfer` struct to work with contexts (or the lower-level `Transfer`).
+pub mod context;
+
+
+/// Stack implementations.
+pub mod stacks;

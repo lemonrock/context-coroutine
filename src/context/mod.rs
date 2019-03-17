@@ -2,10 +2,13 @@
 // Copyright © 2019 The developers of context-coroutine. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/context-coroutine/master/COPYRIGHT.
 
 
-#[derive(Debug)]
-enum ChildOutcome<Yields: Sized, Complete: Sized>
-{
-	WouldLikeToResume(Yields),
+use super::*;
 
-	Complete(thread::Result<Complete>),
-}
+
+include!("ContextEntryPointFunctionPointer.rs");
+include!("DataToTransfer.rs");
+include!("SavedContext.rs");
+include!("SavedContextWrapper.rs");
+include!("Transfer.rs");
+include!("TransferableData.rs");
+include!("TypeSafeTransfer.rs");

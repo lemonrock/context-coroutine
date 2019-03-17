@@ -4,7 +4,7 @@
 
 [package]
 name = "context-coroutine"
-description = "This is a simple set of extensions to the context crate to provide stackful coroutines; it is not officially associated with the context crate."
+description = "This is a simple set of extensions to provide stackful coroutines; it is not officially associated with the context crate."
 keywords = ["context", "coroutine", "coroutines", "concurrency"]
 categories = ["concurrency"]
 license = "MIT"
@@ -14,8 +14,11 @@ repository = "https://github.com/lemonrock/context-coroutine.git"
 exclude = ["*"]
 include = ["README.md", "LICENSE", "COPYRIGHT", "src/**/*.rs", "Cargo.toml", "rustfmt.toml", "clippy.toml"]
 readme = "README.md"
+edition = "2018"
 publish = true
-version = "2.1.1"
+version = "3.0.0"
 
 [dependencies]
-context = "^2.1.0"
+libc = "^0.2.50"
+libc-extra = "^0.3.2"
+likely = "^0.1.0"

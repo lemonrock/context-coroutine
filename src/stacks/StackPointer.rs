@@ -2,5 +2,7 @@
 // Copyright © 2019 The developers of context-coroutine. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/context-coroutine/master/COPYRIGHT.
 
 
-/// A function pointer.
-pub type ResumeOnTopFunction = ResumeOntopFn;
+/// A stack pointer.
+///
+/// Can be 'NULL' legitimately.
+pub type StackPointer = *const u8;

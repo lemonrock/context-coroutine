@@ -3,7 +3,7 @@
 
 
 #[derive(Debug)]
-pub(crate) enum ParentInstructingChild<ResumeArguments: Sized>
+enum ParentInstructingChild<ResumeArguments: Sized>
 {
 	Resume(ResumeArguments),
 

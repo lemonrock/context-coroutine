@@ -2,10 +2,8 @@
 // Copyright © 2019 The developers of context-coroutine. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/context-coroutine/master/COPYRIGHT.
 
 
-#[derive(Debug)]
-enum ChildOutcome<Yields: Sized, Complete: Sized>
-{
-	WouldLikeToResume(Yields),
+#[cfg(not(all(unix, target_arch = "x86_64")))]
+/// Holds the registers and register-like values that are callee-saved.
+struct SavedContext;
 
-	Complete(thread::Result<Complete>),
-}
+#[cfg(all(unix, target_arch = "x86_64"))] include!("SavedContext.unix.x86_64.rs");

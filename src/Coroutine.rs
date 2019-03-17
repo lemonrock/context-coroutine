@@ -3,7 +3,9 @@
 
 
 /// A trait that stackful coroutines should implement.
-pub trait Coroutine
+///
+/// Start a new instance of this coroutine by using `Self::start_coroutine()`.
+pub trait Coroutine: Sized
 {
 	/// Type of the arguments the coroutine is initially called with, eg `(usize, String)`.
 	type StartArguments: Sized;
@@ -22,9 +24,22 @@ pub trait Coroutine
 	/// Panics inside the coroutine are transferred to the calling thread and raised.
 	fn coroutine<'yielder>(start_arguments: Self::StartArguments, yielder: Yielder<'yielder, Self::ResumeArguments, Self::Yields, Self::Complete>) -> Self::Complete;
 
+	/// Starts the coroutine; execution will transfer to the coroutine.
+	///
+	/// Ownership of `start_arguments` will also transfer.
+	///
+	/// Returns the data transferred to us after the start and a guard object to resume the coroutine again or the final result.
+	///
+	/// If the coroutine panicked, this panics.
+	#[inline(always)]
+	fn start_coroutine<S: Stack>(stack: S, start_arguments: Self::StartArguments) -> StartOutcome<S, Self>
+	{
+		CoroutineInstance::new(stack).start(start_arguments)
+	}
+
 	#[doc(hidden)]
 	#[inline(never)]
-	extern "C" fn context_coroutine_wrapper(transfer: Transfer) -> !
+	extern "C" fn context_entry_point_function_pointer(transfer: Transfer) -> !
 	{
 		let mut type_safe_transfer = TypeSafeTransfer::<ParentInstructingChild<Self::ResumeArguments>, ChildOutcome<Self::Yields, Self::Complete>>::wrap(transfer);
 		let start_child_arguments: Self::StartArguments = type_safe_transfer.start_child_arguments();
@@ -36,6 +51,6 @@ pub trait Coroutine
 		};
 
 		type_safe_transfer.resume_drop_safe(ChildOutcome::Complete(result));
-		unreachable!("Closure has completed")
+		unsafe { unreachable() }
 	}
 }

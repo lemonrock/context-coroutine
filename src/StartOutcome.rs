@@ -3,10 +3,10 @@
 
 
 /// Outcome of a coroutine's start.
-pub enum StartOutcome<S: Sized + Deref<Target=Stack>, C: Coroutine>
+pub enum StartOutcome<S: Stack, C: Coroutine>
 {
 	/// Coroutine has returned an intermediate result and would to resume.
-	WouldLikeToResume(C::Yields, StartedStackAndTypeSafeTransfer<S, C>),
+	WouldLikeToResume(C::Yields, StartedCoroutineInstance<S, C>),
 
 	/// Coroutine has completed.
 	Complete(C::Complete),
