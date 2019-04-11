@@ -32,7 +32,7 @@ pub trait Coroutine: Sized
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
-	fn start_coroutine<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator>(stack: S, global_allocator: &'static GTACSA, coroutine_local_allocator: Option<GTACSA::CoroutineLocalAllocator>, start_arguments: Self::StartArguments) -> StartOutcome<S, GTACSA, Self>
+	fn start_coroutine<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator>(stack: S, global_allocator: &'static GTACSA, coroutine_local_allocator: GTACSA::CoroutineLocalAllocator, start_arguments: Self::StartArguments) -> StartOutcome<S, GTACSA, Self>
 	{
 		CoroutineInstance::new(stack, global_allocator, coroutine_local_allocator).start(start_arguments)
 	}

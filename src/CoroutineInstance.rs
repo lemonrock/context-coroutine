@@ -36,14 +36,14 @@ impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine
 impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> CoroutineInstance<S, GTACSA, C>
 {
 	#[inline(always)]
-	pub(crate) fn new(stack: S, global_allocator: &'static GTACSA, coroutine_local_allocator: Option<GTACSA::CoroutineLocalAllocator>) -> Self
+	pub(crate) fn new(stack: S, global_allocator: &'static GTACSA, coroutine_local_allocator: GTACSA::CoroutineLocalAllocator) -> Self
 	{
 		Self
 		{
 			type_safe_transfer: TypeSafeTransfer::new(&stack, C::context_entry_point_function_pointer),
 			stack,
 			global_allocator,
-			inactive_coroutine_local_allocator: coroutine_local_allocator,
+			inactive_coroutine_local_allocator: Some(coroutine_local_allocator),
 			inactive_current_allocator_in_use: CurrentAllocatorInUse::Global,
 			child_coroutine_is_active: false,
 		}
