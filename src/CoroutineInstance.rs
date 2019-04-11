@@ -2,14 +2,17 @@
 // Copyright © 2019 The developers of context-coroutine. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/context-coroutine/master/COPYRIGHT.
 
 
-struct CoroutineInstance<S: Stack, C: Coroutine>
+struct CoroutineInstance<S: Stack, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine>
 {
 	type_safe_transfer: TypeSafeTransfer<ChildOutcome<C::Yields, C::Complete>, ParentInstructingChild<C::ResumeArguments>>,
 	#[allow(dead_code)] stack: S,
+	global_allocator: &'static GTACSA,
+	inactive_coroutine_local_allocator: Option<GTACSA::CoroutineLocalAllocator>,
+	inactive_current_allocator_in_use: CurrentAllocatorInUse,
 	child_coroutine_is_active: bool,
 }
 
-impl<S: Stack, C: Coroutine> Drop for CoroutineInstance<S, C>
+impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> Drop for CoroutineInstance<S, GTACSA, C>
 {
 	#[inline(always)]
 	fn drop(&mut self)
@@ -30,24 +33,60 @@ impl<S: Stack, C: Coroutine> Drop for CoroutineInstance<S, C>
 	}
 }
 
-impl<S: Stack, C: Coroutine> CoroutineInstance<S, C>
+impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> CoroutineInstance<S, GTACSA, C>
 {
 	#[inline(always)]
-	pub(crate) fn new(stack: S) -> Self
+	pub(crate) fn new(stack: S, global_allocator: &'static GTACSA, coroutine_local_allocator: Option<GTACSA::CoroutineLocalAllocator>) -> Self
 	{
 		Self
 		{
 			type_safe_transfer: TypeSafeTransfer::new(&stack, C::context_entry_point_function_pointer),
 			stack,
+			global_allocator,
+			inactive_coroutine_local_allocator: coroutine_local_allocator,
+			inactive_current_allocator_in_use: CurrentAllocatorInUse::Global,
 			child_coroutine_is_active: false,
 		}
 	}
 
 	#[inline(always)]
-	pub(crate) fn start(mut self, start_arguments: C::StartArguments) -> StartOutcome<S, C>
+	pub(crate) fn start(mut self, start_arguments: C::StartArguments) -> StartOutcome<S, GTACSA, C>
 	{
+		self.pre_transfer_control_to_coroutine();
 		let child_outcome = self.type_safe_transfer.resume_drop_safe_unsafe_typing(start_arguments);
+		self.post_transfer_control_to_coroutine();
 
+		self.start_process_child_outcome(child_outcome)
+	}
+
+	#[inline(always)]
+	pub(crate) fn resume_drop_safe(&mut self, arguments: C::ResumeArguments) -> ResumeOutcome<C>
+	{
+		self.pre_transfer_control_to_coroutine();
+		let child_outcome = self.type_safe_transfer.resume_drop_safe(ParentInstructingChild::Resume(arguments));
+		self.post_transfer_control_to_coroutine();
+
+		self.resume_drop_safe_process_child_outcome(child_outcome)
+	}
+
+	#[inline(always)]
+	fn pre_transfer_control_to_coroutine(&mut self)
+	{
+		self.inactive_coroutine_local_allocator = self.global_allocator.replace_coroutine_local_allocator(self.inactive_coroutine_local_allocator.take());
+		self.inactive_current_allocator_in_use = self.global_allocator.save_current_allocator_in_use();
+		self.global_allocator.restore_current_allocator_in_use(CurrentAllocatorInUse::CoroutineLocal);
+	}
+
+	#[inline(always)]
+	fn post_transfer_control_to_coroutine(&mut self)
+	{
+		self.inactive_coroutine_local_allocator = self.global_allocator.replace_coroutine_local_allocator(self.inactive_coroutine_local_allocator.take());
+		self.global_allocator.restore_current_allocator_in_use(self.inactive_current_allocator_in_use);
+	}
+
+	#[inline(always)]
+	fn start_process_child_outcome(mut self, child_outcome: ChildOutcome<C::Yields, C::Complete>) -> StartOutcome<S, GTACSA, C>
+	{
 		use self::ChildOutcome::*;
 
 		match child_outcome
@@ -66,14 +105,7 @@ impl<S: Stack, C: Coroutine> CoroutineInstance<S, C>
 	}
 
 	#[inline(always)]
-	pub(crate) fn resume_drop_safe(&mut self, arguments: C::ResumeArguments) -> ResumeOutcome<C>
-	{
-		let child_outcome = self.type_safe_transfer.resume_drop_safe(ParentInstructingChild::Resume(arguments));
-		self.process_child_outcome(child_outcome)
-	}
-
-	#[inline(always)]
-	fn process_child_outcome(&mut self, child_outcome: ChildOutcome<C::Yields, C::Complete>) -> ResumeOutcome<C>
+	fn resume_drop_safe_process_child_outcome(&mut self, child_outcome: ChildOutcome<C::Yields, C::Complete>) -> ResumeOutcome<C>
 	{
 		use self::ChildOutcome::*;
 

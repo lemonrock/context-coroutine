@@ -29,6 +29,7 @@
 //! The developers are not associated with the authors of [context](https://github.com/zonyitoo/context-rs) but are extremely grateful for the work they've put into to a superb piece of code.
 
 
+extern crate context_allocator;
 extern crate libc;
 extern crate libc_extra;
 #[macro_use] extern crate likely;
@@ -36,6 +37,7 @@ extern crate libc_extra;
 
 use self::context::*;
 use self::stacks::*;
+use ::context_allocator::global::*;
 use ::std::intrinsics::unreachable;
 use ::std::marker::PhantomData;
 use ::std::mem::uninitialized;
