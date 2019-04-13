@@ -18,8 +18,9 @@ pub struct CoroutineMemorySource<GTACSA: 'static + GlobalThreadAndCoroutineSwitc
 
 impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, CoroutineLocalAllocatorConstructor: Fn(RcMemorySource<ArenaMemorySource<MemoryMapSource>>, NonZeroUsize) -> Result<GTACSA::CoroutineLocalAllocator, AllocErr>> CoroutineMemorySource<GTACSA, CoroutineLocalAllocatorConstructor>
 {
+	/// Creates a new instance.
 	#[inline(always)]
-	pub fn new(global_allocator: &'static GTACSA, coroutine_local_allocator_constructor: CoroutineLocalAllocatorConstructor, memory_map_source: MemoryMapAllocator, memory_source_size: NonZeroUsize, heap_size: NonZeroUsize, stack_size: NonZeroUsize) -> Result<Self, AllocErr>
+	pub fn new(global_allocator: &'static GTACSA, coroutine_local_allocator_constructor: CoroutineLocalAllocatorConstructor, memory_map_source: MemoryMapSource, memory_source_size: NonZeroUsize, heap_size: NonZeroUsize, stack_size: NonZeroUsize) -> Result<Self, AllocErr>
 	{
 		/// On x86-64, the stack needs to be 16 byte aligned with a minimum size of 64 bytes in order to store a `SavedContext`.
 		///
@@ -28,7 +29,7 @@ impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, CoroutineLocalAllocato
 		const fn align_memory_size(size: NonZeroUsize) -> NonZeroUsize
 		{
 			const MemoryAlignment: usize = 64;
-			((size.get() + (MemoryAlignment - 1)) / MemoryAlignment).non_zero()
+			non_zero_usize((size.get() + (MemoryAlignment - 1)) / MemoryAlignment)
 		}
 
 		let heap_size = align_memory_size(heap_size);
@@ -50,7 +51,7 @@ impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, CoroutineLocalAllocato
 	}
 
 	#[inline(always)]
-	pub fn allocate_coroutine_memory(&self) -> Result<CoroutineMemory<GTACSA>, AllocErr>
+	fn allocate_coroutine_memory(&self) -> Result<CoroutineMemory<GTACSA>, AllocErr>
 	{
 		let coroutine_local_allocator = (self.coroutine_local_allocator_constructor)(self.arena.clone(), self.block_size)?;
 

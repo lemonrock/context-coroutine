@@ -44,7 +44,7 @@ impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> Coroutin
 	}
 
 	#[inline(always)]
-	pub(crate) fn start(mut self, start_arguments: C::StartArguments) -> StartOutcome<S, GTACSA, C>
+	pub(crate) fn start(mut self, start_arguments: C::StartArguments) -> StartOutcome<GTACSA, C>
 	{
 		self.pre_transfer_control_to_coroutine();
 		let child_outcome = self.type_safe_transfer.resume_drop_safe_unsafe_typing(start_arguments);

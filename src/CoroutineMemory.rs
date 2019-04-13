@@ -25,7 +25,7 @@ impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator> CoroutineMemory<GTACSA
 	#[inline(always)]
 	fn pre_transfer_control_to_coroutine(&mut self)
 	{
-		self.inactive_coroutine_local_allocator = self.global_allocator.replace_coroutine_local_allocator(self.inactive_coroutine_local_allocator);
+		self.inactive_coroutine_local_allocator = self.global_allocator.replace_coroutine_local_allocator(self.read_inactive_coroutine_local_allocator());
 		self.inactive_current_allocator_in_use = self.global_allocator.replace_current_allocator_in_use(self.inactive_current_allocator_in_use);
 	}
 
@@ -33,6 +33,13 @@ impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator> CoroutineMemory<GTACSA
 	fn post_transfer_control_to_coroutine(&mut self)
 	{
 		self.inactive_current_allocator_in_use = self.global_allocator.replace_current_allocator_in_use(self.inactive_current_allocator_in_use);
-		self.inactive_coroutine_local_allocator = self.global_allocator.replace_coroutine_local_allocator(self.inactive_coroutine_local_allocator);
+		self.inactive_coroutine_local_allocator = self.global_allocator.replace_coroutine_local_allocator(self.read_inactive_coroutine_local_allocator());
+	}
+
+	/// Borrow checker hack to avoid the need to use `self.inactive_coroutine_local_allocator.take()`, which also writes-back to memory.
+	#[inline(always)]
+	fn read_inactive_coroutine_local_allocator(&self) -> Option<GTACSA::CoroutineLocalAllocator>
+	{
+		unsafe { read(&self.inactive_coroutine_local_allocator) }
 	}
 }

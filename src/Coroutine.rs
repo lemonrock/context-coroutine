@@ -34,7 +34,7 @@ pub trait Coroutine: Sized
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
-	fn start_coroutine<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator>(coroutine_memory_source: &CoroutineMemorySource<GTACSA>, start_arguments: Self::StartArguments) -> Result<StartOutcome<GTACSA, Self>, AllocErr>
+	fn start_coroutine<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, CoroutineLocalAllocatorConstructor: Fn(RcMemorySource<ArenaMemorySource<MemoryMapSource>>, NonZeroUsize) -> Result<GTACSA::CoroutineLocalAllocator, AllocErr>>(coroutine_memory_source: &CoroutineMemorySource<GTACSA, CoroutineLocalAllocatorConstructor>, start_arguments: Self::StartArguments) -> Result<StartOutcome<GTACSA, Self>, AllocErr>
 	{
 		let coroutine_memory = coroutine_memory_source.allocate_coroutine_memory()?;
 
