@@ -7,6 +7,7 @@
 #![allow(non_camel_case_types)]
 #![deny(missing_docs)]
 #![deny(unreachable_patterns)]
+#![feature(allocator_api)]
 #![feature(asm)]
 #![feature(core_intrinsics)]
 #![feature(global_asm)]
@@ -37,10 +38,16 @@ extern crate libc_extra;
 
 use self::context::*;
 use self::stacks::*;
+use ::context_allocator::*;
+use ::context_allocator::arena_memory_source::*;
+use ::context_allocator::extensions::*;
 use ::context_allocator::global::*;
+use ::context_allocator::mmap::*;
+use ::std::alloc::AllocErr;
 use ::std::intrinsics::unreachable;
 use ::std::marker::PhantomData;
 use ::std::mem::uninitialized;
+use ::std::num::NonZeroUsize;
 use ::std::panic::*;
 use ::std::ptr::NonNull;
 use ::std::thread;
@@ -48,6 +55,8 @@ use ::std::thread;
 
 include!("ChildOutcome.rs");
 include!("Coroutine.rs");
+include!("CoroutineMemory.rs");
+include!("CoroutineMemorySource.rs");
 include!("CoroutineInstance.rs");
 include!("ParentInstructingChild.rs");
 include!("ResumeOutcome.rs");

@@ -13,51 +13,46 @@
 ///
 /// A diagram:-
 /// ```
-/// eg 0x1006  +---+ Top (origin): High Address
+/// eg 0x1006  +---+ Bottom (origin): High Address
 ///            | S |
 ///            | T |
 ///            | A |
 ///            | C |
 ///            | K |
-/// eg 0x1000  +---+ Bottom: Low Address
+/// eg 0x1000  +---+ Top: Low Address
 ///
 /// Pushing a 2 byte value, X, grows the stack thus:-
 ///
-/// eg 0x1006  +---+ Top (origin): High Address
+/// eg 0x1006  +---+ Bottom (origin): High Address
 ///            | S |
 ///            | T |
 ///            | A |
 ///            | C |
 ///            | K |
-/// eg 0x1000  |···| Former Bottom
+/// eg 0x1000  |···| Former Top
 ///            | X |
-/// eg  0x998  +---+ Bottom: Low Address
+/// eg  0x998  +---+ Top: Low Address
 ///
 /// Stacks can have a 'guard' page below the Bottom which can be mprotected'd as PROT_NONE; any reads or write will cause a SIGSEGV.
 ///
-/// eg 0x1006  +---+ Top (origin): High Address
+/// eg 0x1006  +---+ Bottom (origin): High Address
 ///            | S |
 ///            | T |
 ///            | A | Regular Pages (mprotect: PROT_READ + PROT_WRITE)
 ///            | C |
 ///            | K |
-/// eg 0x1000  +---+ Bottom: Low Address
+/// eg 0x1000  +---+ Top: Low Address
 ///            |   |
 ///            |   | Guard Page (mprotect: PROT_NONE)
 ///            |   |
-///            +---+ Bottom of Guard Page
+///            +---+ Top of Guard Page
 ///
 /// A 'guard' page is 4,096 bytes on x86-64.
 /// ```
 pub trait Stack
 {
-	/// Top.
+	/// Bottom (origin) of stack (a high address).
 	///
-	/// This ***must*** be page aligned.
-	#[inline(always)]
-	fn top(&self) -> StackPointer;
-
-	/// Size, excluding any guard page at the bottom.
-	#[inline(always)]
-	fn size(&self) -> usize;
+	/// This ***must*** be 16-byte aligned on x86-64.
+	fn bottom(&self) -> StackPointer;
 }

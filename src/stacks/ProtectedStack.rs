@@ -6,7 +6,7 @@
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ProtectedStack
 {
-	bottom_including_guard_page: usize,
+	top_including_guard_page: usize,
 	size_including_guard_page: usize,
 }
 
@@ -15,22 +15,18 @@ impl Drop for ProtectedStack
 	#[inline(always)]
 	fn drop(&mut self)
 	{
-		unsafe { munmap(self.bottom_including_guard_page as *mut _, self.size_including_guard_page) };
+		unsafe { munmap(self.top_including_guard_page as *mut _, self.size_including_guard_page) };
 	}
 }
 
 impl Stack for ProtectedStack
 {
 	#[inline(always)]
-	fn top(&self) -> StackPointer
+	fn bottom(&self) -> StackPointer
 	{
-		(self.bottom_including_guard_page + self.size_including_guard_page) as StackPointer
-	}
-
-	#[inline(always)]
-	fn size(&self) -> usize
-	{
-		self.size_including_guard_page - Self::page_size()
+		// Yes, this is correct.
+		// On x86-64 and most other systems, stacks grow downwards, so the concepts of top and bottom are the opposite to high and low!
+		(self.top_including_guard_page + self.size_including_guard_page) as StackPointer
 	}
 }
 
@@ -49,21 +45,21 @@ impl ProtectedStack
 
 		#[cfg(not(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux", target_os = "openbsd")))] const MAP_STACK: i32 = 0;
 
-		let bottom_including_guard_page = unsafe { mmap(null_mut(), size_including_guard_page, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_STACK | MAP_NORESERVE, NoFileDescriptor, NoOffset) };
-		if unlikely!(bottom_including_guard_page == MAP_FAILED)
+		let top_including_guard_page = unsafe { mmap(null_mut(), size_including_guard_page, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_STACK | MAP_NORESERVE, NoFileDescriptor, NoOffset) };
+		if unlikely!(top_including_guard_page == MAP_FAILED)
 		{
 			Err(io::Error::last_os_error())
 		}
 		else
 		{
-			let result = unsafe { mprotect(bottom_including_guard_page, page_size, PROT_NONE) };
+			let result = unsafe { mprotect(top_including_guard_page, page_size, PROT_NONE) };
 			if likely!(result == 0)
 			{;
 				Ok
 				(
 					Self
 					{
-						bottom_including_guard_page: (bottom_including_guard_page as usize),
+						top_including_guard_page: (top_including_guard_page as usize),
 						size_including_guard_page,
 					}
 				)

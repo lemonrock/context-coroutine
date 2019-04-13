@@ -104,24 +104,26 @@ global_asm!
 
 impl SavedContext
 {
-	/// Must never be inlined, as the design takes advantage of the System V ABI calling convention for x86-64.
+	/// Must never be inlined, as the design takes advantage of the System V ABI calling convention for x86-64 to preserve registers.
 	///
 	/// If called during an Intel hardware memory transaction (see Intel TSX / HTM), will cause the transaction to be aborted everytime.
 	///
 	/// In this calling convention, the majority of registers and extended state is caller-saved.
 	/// Hence only a small amount of state needs to be preserved.
+	///
+	/// See the documentation of the `Stack` trait as to why `pointer_to_bottom_of_stack` is the ***highest*** address: on x86-64, stacks grow downwards.
 	#[inline(never)]
 	#[no_mangle]
 	#[naked]
 	#[allow(unused_variables)]
-	unsafe extern "C" fn initialize(pointer_to_top_of_stack: *const u8, context_entry_function_pointer: ContextEntryPointFunctionPointer) -> NonNull<SavedContext>
+	unsafe extern "C" fn initialize(pointer_to_bottom_of_stack: *const u8, context_entry_function_pointer: ContextEntryPointFunctionPointer) -> NonNull<SavedContext>
 	{
 		asm!
 		(
 		"
 			// (1) Save initial context by partially initializing `SavedContext`.
 
-				// Reserve 64 bytes below `pointer_to_top_of_stack` (rdi) for `size_of::<SavedContext>()`.
+				// Reserve 64 bytes below `pointer_to_bottom_of_stack` (rdi) for `size_of::<SavedContext>()`.
 				lea rdi, qword ptr [rdi - 64]
 
 				// Save a known good initial state that can be restored into the MXCSR register (ie does not raise an exception on load) in the `SavedContext.sse_control_and_status_word` field.
@@ -149,7 +151,7 @@ impl SavedContext
 				mov qword ptr [rdi + 56], rax
 
 
-			// (2) Returns `pointer_to_top_of_stack - 64` (rax); this is a pointer to the initial `SavedContext`.
+			// (2) Returns `pointer_to_bottom_of_stack - 64` (rax); this is a pointer to the initial `SavedContext`.
 			mov rax, rdi
 			ret
 		"
@@ -255,7 +257,7 @@ impl SavedContext
 
 			// (3) Re-enter previous context function.
 
-				// Point stack to top of `pointer_to_previously_saved_stack_context` (rdi).
+				// Point stack to highest address of `pointer_to_previously_saved_stack_context` (rdi).
 				//
 				// The data below `pointer_to_previously_saved_stack_context` is going to be overwritten when the resumed context function is called.
 				lea rsp, qword ptr [rdi + 64]

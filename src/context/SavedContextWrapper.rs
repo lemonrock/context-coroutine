@@ -18,7 +18,7 @@ impl SavedContextWrapper
 	#[inline(always)]
 	fn initialize(stack: &impl Stack, context_entry_point_function_pointer: ContextEntryPointFunctionPointer) -> Self
 	{
-		Self(unsafe { SavedContext::initialize(stack.top(), context_entry_point_function_pointer) })
+		Self(unsafe { SavedContext::initialize(stack.bottom(), context_entry_point_function_pointer) })
 	}
 
 	/// Yields execution to this `SavedContextWrapper` (`self`).

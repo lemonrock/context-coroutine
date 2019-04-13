@@ -2,17 +2,14 @@
 // Copyright © 2019 The developers of context-coroutine. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/context-coroutine/master/COPYRIGHT.
 
 
-struct CoroutineInstance<S: Stack, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine>
+struct CoroutineInstance<GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine>
 {
 	type_safe_transfer: TypeSafeTransfer<ChildOutcome<C::Yields, C::Complete>, ParentInstructingChild<C::ResumeArguments>>,
-	#[allow(dead_code)] stack: S,
-	global_allocator: &'static GTACSA,
-	inactive_coroutine_local_allocator: Option<GTACSA::CoroutineLocalAllocator>,
-	inactive_current_allocator_in_use: CurrentAllocatorInUse,
+	coroutine_memory: CoroutineMemory<GTACSA>,
 	child_coroutine_is_active: bool,
 }
 
-impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> Drop for CoroutineInstance<S, GTACSA, C>
+impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> Drop for CoroutineInstance<GTACSA, C>
 {
 	#[inline(always)]
 	fn drop(&mut self)
@@ -33,18 +30,15 @@ impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine
 	}
 }
 
-impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> CoroutineInstance<S, GTACSA, C>
+impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> CoroutineInstance<GTACSA, C>
 {
 	#[inline(always)]
-	pub(crate) fn new(stack: S, global_allocator: &'static GTACSA, coroutine_local_allocator: GTACSA::CoroutineLocalAllocator) -> Self
+	pub(crate) fn new(coroutine_memory: CoroutineMemory<GTACSA>) -> Self
 	{
 		Self
 		{
-			type_safe_transfer: TypeSafeTransfer::new(&stack, C::context_entry_point_function_pointer),
-			stack,
-			global_allocator,
-			inactive_coroutine_local_allocator: Some(coroutine_local_allocator),
-			inactive_current_allocator_in_use: CurrentAllocatorInUse::Global,
+			type_safe_transfer: TypeSafeTransfer::new(&coroutine_memory, C::context_entry_point_function_pointer),
+			coroutine_memory,
 			child_coroutine_is_active: false,
 		}
 	}
@@ -72,20 +66,17 @@ impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine
 	#[inline(always)]
 	fn pre_transfer_control_to_coroutine(&mut self)
 	{
-		self.inactive_coroutine_local_allocator = self.global_allocator.replace_coroutine_local_allocator(self.inactive_coroutine_local_allocator.take());
-		self.inactive_current_allocator_in_use = self.global_allocator.save_current_allocator_in_use();
-		self.global_allocator.restore_current_allocator_in_use(CurrentAllocatorInUse::CoroutineLocal);
+		self.coroutine_memory.pre_transfer_control_to_coroutine()
 	}
 
 	#[inline(always)]
 	fn post_transfer_control_to_coroutine(&mut self)
 	{
-		self.inactive_coroutine_local_allocator = self.global_allocator.replace_coroutine_local_allocator(self.inactive_coroutine_local_allocator.take());
-		self.global_allocator.restore_current_allocator_in_use(self.inactive_current_allocator_in_use);
+		self.coroutine_memory.post_transfer_control_to_coroutine()
 	}
 
 	#[inline(always)]
-	fn start_process_child_outcome(mut self, child_outcome: ChildOutcome<C::Yields, C::Complete>) -> StartOutcome<S, GTACSA, C>
+	fn start_process_child_outcome(mut self, child_outcome: ChildOutcome<C::Yields, C::Complete>) -> StartOutcome<GTACSA, C>
 	{
 		use self::ChildOutcome::*;
 

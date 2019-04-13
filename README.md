@@ -1,6 +1,6 @@
-# context-coroutines
+# context-coroutine
 
-[context-coroutines] is a Rust crate that provides a simple set of extensions to the [context](https://github.com/zonyitoo/context-rs) crate to provide stackful coroutines.
+[context-coroutine] is a Rust crate that provides a simple set of extensions to the [context](https://github.com/zonyitoo/context-rs) crate to provide stackful coroutines.
 
 The intended use case is mostly for read and write (input and output, I/O) with socket file descriptors.
 
@@ -11,4 +11,4 @@ The developers are not associated with the authors of [context](https://github.c
 
 The license for this project is MIT.
 
-[context-coroutines]: https://github.com/lemonrock/context-coroutines "context-coroutines GitHub page"
+[context-coroutine]: https://github.com/lemonrock/context-coroutine "context-coroutine GitHub page"

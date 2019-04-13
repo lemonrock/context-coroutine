@@ -19,7 +19,7 @@ publish = true
 version = "3.0.0"
 
 [dependencies]
-context-allocator = "^0.1.0"
+context-allocator = "^0.2.1"
 libc = "^0.2.50"
 libc-extra = "^0.3.2"
 likely = "^0.1.0"

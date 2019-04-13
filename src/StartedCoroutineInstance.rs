@@ -7,12 +7,12 @@
 /// On drop the the closure is killed and the stack is then relinquished.
 ///
 /// To create an instance of this struct, use `Coroutine::start_coroutine()`.
-pub struct StartedCoroutineInstance<S: Stack, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine>
+pub struct StartedCoroutineInstance<GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine>
 {
-	owns: CoroutineInstance<S, GTACSA, C>,
+	owns: CoroutineInstance<GTACSA, C>,
 }
 
-impl<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> StartedCoroutineInstance<S, GTACSA, C>
+impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> StartedCoroutineInstance<GTACSA, C>
 {
 	/// Resumes.
 	///

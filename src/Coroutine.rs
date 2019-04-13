@@ -26,15 +26,19 @@ pub trait Coroutine: Sized
 
 	/// Starts the coroutine; execution will transfer to the coroutine.
 	///
+	/// Execution does not start (returns `Err(AllocErr)`) if there is not memory available to start the coroutine.
+	///
 	/// Ownership of `start_arguments` will also transfer.
 	///
 	/// Returns the data transferred to us after the start and a guard object to resume the coroutine again or the final result.
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
-	fn start_coroutine<S: Stack, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator>(stack: S, global_allocator: &'static GTACSA, coroutine_local_allocator: GTACSA::CoroutineLocalAllocator, start_arguments: Self::StartArguments) -> StartOutcome<S, GTACSA, Self>
+	fn start_coroutine<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator>(coroutine_memory_source: &CoroutineMemorySource<GTACSA>, start_arguments: Self::StartArguments) -> Result<StartOutcome<GTACSA, Self>, AllocErr>
 	{
-		CoroutineInstance::new(stack, global_allocator, coroutine_local_allocator).start(start_arguments)
+		let coroutine_memory = coroutine_memory_source.allocate_coroutine_memory()?;
+
+		Ok(CoroutineInstance::new(coroutine_memory).start(start_arguments))
 	}
 
 	#[doc(hidden)]
