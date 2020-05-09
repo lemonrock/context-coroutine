@@ -7,6 +7,11 @@
       <sourceFolder url="file://$MODULE_DIR$/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/tests" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/benches" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../context-allocator/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../context-allocator/examples" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/../context-allocator/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/../context-allocator/benches" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/../context-allocator/target" />
       <excludeFolder url="file://$MODULE_DIR$/.cargo" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
