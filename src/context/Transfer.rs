@@ -25,6 +25,7 @@ impl Transfer
 	/// Creates a new instance, by initializing a new context.
 	///
 	/// It is your responsibility to make sure `stack` lives longer than the generated `Self` result.
+	#[allow(deprecated)]
 	#[inline(always)]
 	pub fn new(stack: &impl Stack, context_entry_point_function_pointer: ContextEntryPointFunctionPointer) -> Self
 	{

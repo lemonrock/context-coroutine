@@ -54,7 +54,7 @@ impl ProtectedStack
 		{
 			let result = unsafe { mprotect(top_including_guard_page, page_size, PROT_NONE) };
 			if likely!(result == 0)
-			{;
+			{
 				Ok
 				(
 					Self
@@ -92,6 +92,7 @@ impl ProtectedStack
 	#[inline(always)]
 	fn maximum_stack_size() -> usize
 	{
+		#[allow(deprecated)]
 		#[inline(always)]
 		fn uncached_maximum_stack_size() -> usize
 		{

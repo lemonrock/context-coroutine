@@ -51,7 +51,7 @@ use likely::*;
 use std::alloc::AllocErr;
 use std::intrinsics::unreachable;
 use std::marker::PhantomData;
-use std::mem::uninitialized;
+#[allow(deprecated)] use std::mem::uninitialized;
 use std::num::NonZeroUsize;
 use std::panic::*;
 use std::ptr::NonNull;
