@@ -34,29 +34,29 @@
 //! The license for this project is MIT.
 
 
-extern crate context_allocator;
-extern crate libc;
-extern crate libc_extra;
-#[macro_use] extern crate likely;
+use static_assertions::assert_cfg;
+assert_cfg!(target_os = "linux");
+assert_cfg!(target_pointer_width = "64");
 
 
 use self::context::*;
 use self::stacks::*;
-use ::context_allocator::*;
-use ::context_allocator::allocators::global::*;
-use ::context_allocator::extensions::*;
-use ::context_allocator::memory_sources::*;
-use ::context_allocator::memory_sources::arena_memory_source::*;
-use ::context_allocator::memory_sources::mmap::*;
-use ::std::alloc::AllocErr;
-use ::std::intrinsics::unreachable;
-use ::std::marker::PhantomData;
-use ::std::mem::uninitialized;
-use ::std::num::NonZeroUsize;
-use ::std::panic::*;
-use ::std::ptr::NonNull;
-use ::std::ptr::read;
-use ::std::thread;
+use context_allocator::*;
+use context_allocator::allocators::global::*;
+use context_allocator::extensions::*;
+use context_allocator::memory_sources::*;
+use context_allocator::memory_sources::arena_memory_source::*;
+use context_allocator::memory_sources::mmap::*;
+use likely::*;
+use std::alloc::AllocErr;
+use std::intrinsics::unreachable;
+use std::marker::PhantomData;
+use std::mem::uninitialized;
+use std::num::NonZeroUsize;
+use std::panic::*;
+use std::ptr::NonNull;
+use std::ptr::read;
+use std::thread;
 
 
 include!("ChildOutcome.rs");
