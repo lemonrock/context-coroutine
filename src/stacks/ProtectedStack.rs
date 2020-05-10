@@ -2,21 +2,16 @@
 // Copyright © 2019 The developers of context-coroutine. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/context-coroutine/master/COPYRIGHT.
 
 
-/// A protected stack.
+/// A protected stack backed by mmap'd memory.
+///
+/// Not efficient for many, many coroutines.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ProtectedStack
 {
 	top_including_guard_page: usize,
 	size_including_guard_page: usize,
-}
 
-impl Drop for ProtectedStack
-{
-	#[inline(always)]
-	fn drop(&mut self)
-	{
-		unsafe { munmap(self.top_including_guard_page as *mut _, self.size_including_guard_page) };
-	}
+	mapped_memory: MappedMemory,
 }
 
 impl Stack for ProtectedStack
@@ -25,7 +20,7 @@ impl Stack for ProtectedStack
 	fn bottom(&self) -> StackPointer
 	{
 		// Yes, this is correct.
-		// On x86-64 and most other systems, stacks grow downwards, so the concepts of top and bottom are the opposite to high and low!
+		// On x86-64 and all other systems on Linux (the obsolete PA-RISC being the exception), stacks grow downwards, so the concepts of top and bottom are the opposite to high and low!
 		(self.top_including_guard_page + self.size_including_guard_page) as StackPointer
 	}
 }
@@ -34,106 +29,52 @@ impl ProtectedStack
 {
 	/// Allocate a `size` in bytes.
 	#[inline(always)]
-	pub fn allocate(size: usize) -> Result<Self, io::Error>
+	pub fn allocate(size: NonZeroU64, defaults: &DefaultPageSizeAndHugePageSizes) -> Result<Self, CreationError>
 	{
-		const NoFileDescriptor: c_int = -1;
-		const NoOffset: off_t = 0;
+		let page_size = PageSize::current().size_in_bytes().get();
 
-		let page_size = Self::page_size();
-		let size_including_guard_page_but_might_be_bigger_than_maximum_stack_size = Self::round_up_to_page_size(size, page_size) + page_size;
+		let size_including_guard_page_but_might_be_bigger_than_maximum_stack_size = unsafe { NonZeroU64::new_unchecked(PageSize::current().non_zero_number_of_bytes_rounded_up_to_multiple_of_page_size(size).get() + page_size) };
 		let size_including_guard_page = min(size_including_guard_page_but_might_be_bigger_than_maximum_stack_size, Self::maximum_stack_size());
 
-		#[cfg(not(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux", target_os = "openbsd")))] const MAP_STACK: i32 = 0;
+		let mapped_memory = MappedMemory::anonymous(size_including_guard_page, AddressHint::any(), Protection::ReadWrite, Sharing::Private, None, false, false, defaults)?;
 
-		let top_including_guard_page = unsafe { mmap(null_mut(), size_including_guard_page, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON | MAP_STACK | MAP_NORESERVE, NoFileDescriptor, NoOffset) };
-		if unlikely!(top_including_guard_page == MAP_FAILED)
-		{
-			Err(io::Error::last_os_error())
-		}
-		else
-		{
-			let result = unsafe { mprotect(top_including_guard_page, page_size, PROT_NONE) };
-			if likely!(result == 0)
+		// Create a guard page at the top.
+		mapped_memory.change_protection_range(ExtendedProtection::Inaccessible, 0 .. (page_size as usize)).expect("No good reason to fail");
+
+		Ok
+		(
+			Self
 			{
-				Ok
-				(
-					Self
-					{
-						top_including_guard_page: (top_including_guard_page as usize),
-						size_including_guard_page,
-					}
-				)
+				top_including_guard_page: mapped_memory.virtual_address().into(),
+				size_including_guard_page: size_including_guard_page.get() as usize,
+				mapped_memory,
 			}
-			else if likely!(result == -1)
-			{
-				Err(io::Error::last_os_error())
-			}
-			else
-			{
-				unreachable!()
-			}
-		}
+		)
 	}
 
 	#[inline(always)]
-	fn round_up_to_page_size(size: usize, page_size: usize) -> usize
-	{
-		(size + page_size - 1) & !(page_size - 1)
-	}
-
-	#[inline(always)]
-	fn page_size() -> usize
-	{
-		// `getpagesize()` is faster than `sysconf(_SC_PAGESIZE)` on musl libc systems; on most systems, it's a hardcoded constant.
-		// On ARM and a few others, it's a the value of a global static that never changes.
-		(unsafe { getpagesize() }) as usize
-	}
-
-	#[inline(always)]
-	fn maximum_stack_size() -> usize
+	fn maximum_stack_size() -> NonZeroU64
 	{
 		#[allow(deprecated)]
 		#[inline(always)]
-		fn uncached_maximum_stack_size() -> usize
+		fn uncached_maximum_stack_size() -> NonZeroU64
 		{
-			let mut limit = unsafe { uninitialized()};
-			let result = unsafe { getrlimit(RLIMIT_STACK, &mut limit) };
-
-			if likely!(result == 0)
-			{
-				let maximum = limit.rlim_max;
-				if maximum == RLIM_INFINITY || maximum > (::std::usize::MAX as rlim_t)
-				{
-					::std::usize::MAX
-				}
-				else
-				{
-					maximum as usize
-				}
-			}
-			else if likely!(result == -1)
-			{
-				panic!("getrlimit() failed with `{:?}`", io::Error::last_os_error())
-			}
-			else
-			{
-				unreachable!()
-			}
+			let resource_limit = ResourceName::MaximumSizeOfProcessStackInBytes.get();
+			let maximum = resource_limit.hard_limit();
+			unsafe { NonZeroU64::new_unchecked(maximum.value()) }
 		}
 
-		use self::Ordering::Relaxed;
-
-		static MaximumStackSize: AtomicUsize = AtomicUsize::new(0);
+		static MaximumStackSize: AtomicU64 = AtomicU64::new(0);
 		let potential_maximum_stack_size = MaximumStackSize.load(Relaxed);
 		if unlikely!(potential_maximum_stack_size == 0)
 		{
 			let maximum_stack_size = uncached_maximum_stack_size();
-			MaximumStackSize.store(maximum_stack_size, Relaxed);
+			MaximumStackSize.store(maximum_stack_size.get(), Relaxed);
 			maximum_stack_size
 		}
 		else
 		{
-			potential_maximum_stack_size
+			unsafe { NonZeroU64::new_unchecked(potential_maximum_stack_size) }
 		}
 	}
 }

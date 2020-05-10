@@ -90,7 +90,7 @@ global_asm!
 //
 // If the context function `context_entry_function_pointer: ContextEntryPointFunctionPointer` ever returns (it should not; in Rust it is defined as returning `-> !`), then this code will execute.
 //
-// It raises an invalid opcode exception (which is identical to what `::std::intrinsics::unreachable()` would do in Rust).
+// It raises an invalid opcode exception (which is identical to what `std::intrinsics::unreachable()` would do in Rust).
 global_asm!
 {r#"
     .intel_syntax noprefix

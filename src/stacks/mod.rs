@@ -5,29 +5,15 @@
 use super::*;
 
 
-use ::libc::c_int;
-use ::libc::getrlimit;
-use ::libc::MAP_ANON;
-use ::libc::MAP_FAILED;
-#[cfg(any(target_os = "android", target_os = "dragonfly", target_os = "freebsd", target_os = "linux", target_os = "openbsd"))] use ::libc::MAP_STACK;
-use ::libc::MAP_NORESERVE;
-use ::libc::MAP_PRIVATE;
-use ::libc::mmap;
-use ::libc::mprotect;
-use ::libc::munmap;
-use ::libc::off_t;
-use ::libc::PROT_NONE;
-use ::libc::PROT_READ;
-use ::libc::PROT_WRITE;
-use ::libc::RLIMIT_STACK;
-use ::libc::RLIM_INFINITY;
-use ::libc::rlim_t;
-use ::libc_extra::unix::unistd::getpagesize;
-use ::std::cmp::min;
-use ::std::io;
-use ::std::ptr::null_mut;
-use ::std::sync::atomic::AtomicUsize;
-use ::std::sync::atomic::Ordering;
+use linux_support::file_descriptors::CreationError;
+use linux_support::memory::PageSize;
+use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
+use linux_support::memory::mapping::*;
+use linux_support::resource_limits::ResourceName;
+use std::cmp::min;
+use std::num::NonZeroU64;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering::Relaxed;
 
 
 include!("ProtectedStack.rs");
