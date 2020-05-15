@@ -2,14 +2,14 @@
 // Copyright © 2019 The developers of context-coroutine. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/context-coroutine/master/COPYRIGHT.
 
 
-struct CoroutineInstance<GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine>
+struct CoroutineInstance<HeapSize: Sized, StackSize: Sized, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine>
 {
 	type_safe_transfer: TypeSafeTransfer<ChildOutcome<C::Yields, C::Complete>, ParentInstructingChild<C::ResumeArguments>>,
-	coroutine_memory: CoroutineMemory<GTACSA>,
+	coroutine_memory: CoroutineMemory<HeapSize, StackSize, GTACSA>,
 	child_coroutine_is_active: bool,
 }
 
-impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> Drop for CoroutineInstance<GTACSA, C>
+impl<HeapSize: Sized, StackSize: Sized, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine> Drop for CoroutineInstance<HeapSize, StackSize, GTACSA, C>
 {
 	#[inline(always)]
 	fn drop(&mut self)
@@ -30,10 +30,10 @@ impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> Drop for
 	}
 }
 
-impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> CoroutineInstance<GTACSA, C>
+impl<HeapSize: Sized, StackSize: Sized, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine> CoroutineInstance<HeapSize, StackSize, GTACSA, C>
 {
 	#[inline(always)]
-	pub(crate) fn new(coroutine_memory: CoroutineMemory<GTACSA>) -> Self
+	pub(crate) fn new(coroutine_memory: CoroutineMemory<HeapSize, StackSize, GTACSA>) -> Self
 	{
 		Self
 		{
@@ -44,7 +44,7 @@ impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> Coroutin
 	}
 
 	#[inline(always)]
-	pub(crate) fn start(mut self, start_arguments: C::StartArguments) -> StartOutcome<GTACSA, C>
+	pub(crate) fn start(mut self, start_arguments: C::StartArguments) -> StartOutcome<HeapSize, StackSize, GTACSA, C>
 	{
 		self.pre_transfer_control_to_coroutine();
 		let child_outcome = self.type_safe_transfer.resume_drop_safe_unsafe_typing(start_arguments);
@@ -76,7 +76,7 @@ impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, C: Coroutine> Coroutin
 	}
 
 	#[inline(always)]
-	fn start_process_child_outcome(mut self, child_outcome: ChildOutcome<C::Yields, C::Complete>) -> StartOutcome<GTACSA, C>
+	fn start_process_child_outcome(mut self, child_outcome: ChildOutcome<C::Yields, C::Complete>) -> StartOutcome<HeapSize, StackSize, GTACSA, C>
 	{
 		use self::ChildOutcome::*;
 

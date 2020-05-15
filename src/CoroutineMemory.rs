@@ -3,24 +3,25 @@
 
 
 #[derive(Debug)]
-struct CoroutineMemory<GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator>
+struct CoroutineMemory<HeapSize: Sized, StackSize: Sized, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>>
 {
 	global_allocator: &'static GTACSA,
-	stack_bottom_which_is_higher_memory_address: MemoryAddress,
+	stack: ReferenceCountedLargeRingQueueElement<CoroutineStackMemory<StackSize>>,
 	inactive_coroutine_local_allocator: Option<GTACSA::CoroutineLocalAllocator>,
 	inactive_current_allocator_in_use: CurrentAllocatorInUse,
 }
 
-impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator> Stack for CoroutineMemory<GTACSA>
+impl<HeapSize: Sized, StackSize: Sized, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>> Stack for CoroutineMemory<HeapSize, StackSize, GTACSA>
 {
 	#[inline(always)]
 	fn bottom(&self) -> StackPointer
 	{
-		self.stack_bottom_which_is_higher_memory_address.as_ptr() as StackPointer
+		let size = size_of::<CoroutineStackMemory<StackSize>>();
+		unsafe { self.stack.element().cast::<u8>().as_ptr().add(size) }
 	}
 }
 
-impl<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator> CoroutineMemory<GTACSA>
+impl<HeapSize: Sized, StackSize: Sized, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>> CoroutineMemory<HeapSize, StackSize, GTACSA>
 {
 	#[inline(always)]
 	fn pre_transfer_control_to_coroutine(&mut self)

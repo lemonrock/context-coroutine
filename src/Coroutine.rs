@@ -19,6 +19,16 @@ pub trait Coroutine: Sized
 	/// Type of the final result from the coroutine.
 	type Complete: Sized;
 
+	/// Hint as to how long this coroutine is expected to live for.
+	///
+	/// Used to inform the choice of heap memory allocator.
+	const LifetimeHint: LifetimeHint;
+	
+	/// Used to inform the configuration of the heap memory bit set allocator (if chosen).
+	///
+	/// The heap memory bit set allocator is typically used if `LifetimeHint` is `Medium`.
+	const HeapMemoryAllocatorBlockSizeHint: NonZeroUsize;
+	
 	/// Implement this for the coroutine's behaviour.
 	///
 	/// Panics inside the coroutine are transferred to the calling thread and raised.
@@ -34,9 +44,9 @@ pub trait Coroutine: Sized
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
-	fn start_coroutine<GTACSA: GlobalThreadAndCoroutineSwitchableAllocator, CoroutineLocalAllocatorConstructor: Fn(RcMemorySource<ArenaMemorySource<MemoryMapSource>>, NonZeroUsize) -> Result<GTACSA::CoroutineLocalAllocator, AllocErr>>(coroutine_memory_source: &CoroutineMemorySource<GTACSA, CoroutineLocalAllocatorConstructor>, start_arguments: Self::StartArguments) -> Result<StartOutcome<GTACSA, Self>, AllocErr>
+	fn start_coroutine<HeapSize: Sized, StackSize: Sized, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>>(coroutine_memory_warehouse: &CoroutineMemoryWarehouse<HeapSize, StackSize, GTACSA>, start_arguments: Self::StartArguments) -> Result<StartOutcome<HeapSize, StackSize, GTACSA, Self>, AllocErr>
 	{
-		let coroutine_memory = coroutine_memory_source.allocate_coroutine_memory()?;
+		let coroutine_memory = coroutine_memory_warehouse.allocate_coroutine_memory(Self::LifetimeHint, Self::HeapMemoryAllocatorBlockSizeHint)?;
 
 		Ok(CoroutineInstance::new(coroutine_memory).start(start_arguments))
 	}

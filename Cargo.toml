@@ -25,3 +25,4 @@ static_assertions = "^1.1"
 context-allocator = { path = "../context-allocator", version = "^0.3.0" }
 likely = "^0.1.0"
 linux-support = { version = "^0.0.2", path = "../linux-support" }
+magic-ring-buffer = { version = "^0.2.0", path = "../magic-ring-buffer" }
