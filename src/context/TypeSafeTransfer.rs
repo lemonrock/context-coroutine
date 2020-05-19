@@ -18,9 +18,20 @@ impl<Receive: Sized, Send: Sized> TypeSafeTransfer<Receive, Send>
 	///
 	/// It is your responsibility to make sure `stack` lives longer than the generated `Self` result.
 	#[inline(always)]
-	pub fn new(stack: &impl Stack, context_entry_point_function_pointer: ContextEntryPointFunctionPointer) -> Self
+	pub fn new(stack_bottom: StackPointer, context_entry_point_function_pointer: ContextEntryPointFunctionPointer) -> Self
 	{
-		Self::wrap(Transfer::new(stack, context_entry_point_function_pointer))
+		struct CoroutineStack(StackPointer);
+		
+		impl Stack for CoroutineStack
+		{
+			#[inline(always)]
+			fn bottom(&self) -> StackPointer
+			{
+				self.0
+			}
+		}
+		
+		Self::wrap(Transfer::new(&CoroutineStack(stack_bottom), context_entry_point_function_pointer))
 	}
 
 	/// Wraps a transfer, eg from first call to `context_function`.

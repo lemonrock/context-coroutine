@@ -41,12 +41,18 @@ assert_cfg!(target_pointer_width = "64");
 
 use self::context::*;
 use self::stacks::*;
+use const_fn_assert::cfn_debug_assert;
 use context_allocator::allocators::global::*;
 use context_allocator::memory_sources::*;
 use likely::*;
 use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
+use linux_support::memory::mapping::MappedMemory;
 use magic_ring_buffer::*;
+use magic_ring_buffer::memory_sizes::MemorySize;
 use std::alloc::AllocErr;
+use std::fmt;
+use std::fmt::Debug;
+use std::fmt::Formatter;
 use std::intrinsics::unreachable;
 use std::marker::PhantomData;
 use std::mem::size_of;
@@ -56,18 +62,22 @@ use std::num::NonZeroUsize;
 use std::panic::*;
 use std::ptr::NonNull;
 use std::ptr::read;
+use std::ptr::write;
 use std::thread;
 
 
 include!("ChildOutcome.rs");
 include!("Coroutine.rs");
+include!("CoroutineGenerationCounter.rs");
 include!("CoroutineInstance.rs");
-include!("CoroutineMemory.rs");
-include!("CoroutineMemoryWarehouse.rs");
+include!("CoroutineInstanceAllocator.rs");
+include!("CoroutineInstanceHandle.rs");
+include!("CoroutineInstancePointer.rs");
+include!("CoroutineManager.rs");
 include!("ParentInstructingChild.rs");
 include!("ResumeOutcome.rs");
-include!("StartedCoroutineInstance.rs");
 include!("StartOutcome.rs");
+include!("TaggedRelativePointerToData.rs");
 include!("Yielder.rs");
 
 

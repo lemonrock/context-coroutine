@@ -32,36 +32,19 @@ pub trait Coroutine: Sized
 	/// Implement this for the coroutine's behaviour.
 	///
 	/// Panics inside the coroutine are transferred to the calling thread and raised.
-	fn coroutine<'yielder>(start_arguments: Self::StartArguments, yielder: Yielder<'yielder, Self::ResumeArguments, Self::Yields, Self::Complete>) -> Self::Complete;
-
-	/// Starts the coroutine; execution will transfer to the coroutine.
-	///
-	/// Execution does not start (returns `Err(AllocErr)`) if there is not memory available to start the coroutine.
-	///
-	/// Ownership of `start_arguments` will also transfer.
-	///
-	/// Returns the data transferred to us after the start and a guard object to resume the coroutine again or the final result.
-	///
-	/// If the coroutine panicked, this panics.
-	#[inline(always)]
-	fn start_coroutine<HeapSize: Sized, StackSize: Sized, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>>(coroutine_memory_warehouse: &CoroutineMemoryWarehouse<HeapSize, StackSize, GTACSA>, start_arguments: Self::StartArguments) -> Result<StartOutcome<HeapSize, StackSize, GTACSA, Self>, AllocErr>
-	{
-		let coroutine_memory = coroutine_memory_warehouse.allocate_coroutine_memory(Self::LifetimeHint, Self::HeapMemoryAllocatorBlockSizeHint)?;
-
-		Ok(CoroutineInstance::new(coroutine_memory).start(start_arguments))
-	}
-
+	fn coroutine<'yielder>(coroutine_instance_handle: CoroutineInstanceHandle, start_arguments: Self::StartArguments, yielder: Yielder<'yielder, Self::ResumeArguments, Self::Yields, Self::Complete>) -> Self::Complete;
+	
 	#[doc(hidden)]
 	#[inline(never)]
 	extern "C" fn context_entry_point_function_pointer(transfer: Transfer) -> !
 	{
 		let mut type_safe_transfer = TypeSafeTransfer::<ParentInstructingChild<Self::ResumeArguments>, ChildOutcome<Self::Yields, Self::Complete>>::wrap(transfer);
-		let start_child_arguments: Self::StartArguments = type_safe_transfer.start_child_arguments();
+		let (coroutine_instance_handle, start_child_arguments): (CoroutineInstanceHandle, Self::StartArguments) = type_safe_transfer.start_child_arguments();
 
 		let result =
 		{
 			let yielder = Yielder::new(&mut type_safe_transfer);
-			catch_unwind(AssertUnwindSafe(|| Self::coroutine(start_child_arguments, yielder)))
+			catch_unwind(AssertUnwindSafe(|| Self::coroutine(coroutine_instance_handle, start_child_arguments, yielder)))
 		};
 
 		type_safe_transfer.resume_drop_safe(ChildOutcome::Complete(result));

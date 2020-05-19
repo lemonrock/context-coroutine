@@ -3,10 +3,10 @@
 
 
 /// Outcome of a coroutine's start.
-pub enum StartOutcome<HeapSize: Sized, StackSize: Sized, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine>
+pub enum StartOutcome<C: Coroutine>
 {
 	/// Coroutine has returned an intermediate result and would to resume.
-	WouldLikeToResume(C::Yields, StartedCoroutineInstance<HeapSize, StackSize, GTACSA, C>),
+	WouldLikeToResume(C::Yields),
 
 	/// Coroutine has completed.
 	Complete(C::Complete),
