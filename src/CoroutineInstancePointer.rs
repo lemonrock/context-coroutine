@@ -66,7 +66,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	#[inline(always)]
 	fn into_absolute_pointer(self, allocator: &CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>) -> NonNull<CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>>
 	{
-		self.0.into_absolute_pointer_from(&allocator.allocator)
+		self.0.into_absolute_pointer_from(allocator.mapped_memory())
 	}
 	
 	#[inline(always)]

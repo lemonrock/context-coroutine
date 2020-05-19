@@ -21,6 +21,28 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
+	pub fn new(global_allocator: &'static GTACSA, ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultPageSizeAndHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
+	{
+		Ok
+		(
+			Self
+			{
+				global_allocator,
+				coroutine_instance_allocator: CoroutineInstanceAllocator::new(ideal_maximum_number_of_coroutines, defaults)?,
+			}
+		)
+	}
+	
+	/// Starts the coroutine; execution will transfer to the coroutine.
+	///
+	/// Execution does not start (returns `Err(AllocErr)`) if there is not memory available to start the coroutine.
+	///
+	/// Ownership of `start_arguments` will also transfer.
+	///
+	/// Returns the data transferred to us after the start and a guard object (`StartOutcome<C>`) to resume the coroutine again or the final result.
+	///
+	/// If the coroutine panicked, this panics.
+	#[inline(always)]
 	pub fn start_coroutine(&mut self, coroutine_information: CoroutineInformation, start_arguments: C::StartArguments) -> Result<StartOutcome<C>, AllocErr>
 	{
 		let coroutine_instance_pointer = self.coroutine_instance_allocator.new_coroutine_instance(coroutine_information)?;
