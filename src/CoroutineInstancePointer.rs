@@ -28,6 +28,13 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 
 impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
 {
+	/// From a `CoroutineInstanceHandle`.
+	#[inline(always)]
+	pub unsafe fn from_handle(coroutine_instance_handle: CoroutineInstanceHandle) -> Self
+	{
+		Self(transmute(coroutine_instance_handle))
+	}
+	
 	/// Only returns `Some()` if the generation matches.
 	///
 	/// Generations are used to manage memory that is recycled but to which something still maintains a `CoroutineInstancePointer`.
@@ -57,7 +64,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 	
 	#[inline(always)]
-	unsafe fn as_mut_unchecked<'a>(self, allocator: &'a CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>) -> &'a mut CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+	unsafe fn as_mut_unchecked(self, allocator: &CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>) -> &mut CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
 	{
 		&mut * self.into_absolute_pointer(allocator).as_ptr()
 	}

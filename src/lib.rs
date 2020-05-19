@@ -55,7 +55,7 @@ use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::intrinsics::unreachable;
 use std::marker::PhantomData;
-use std::mem::size_of;
+use std::mem::{size_of, transmute};
 #[allow(deprecated)] use std::mem::uninitialized;
 use std::num::NonZeroU64;
 use std::num::NonZeroUsize;
