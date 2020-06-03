@@ -50,12 +50,13 @@ use linux_support::memory::mapping::MappedMemory;
 use magic_ring_buffer::*;
 use magic_ring_buffer::memory_sizes::MemorySize;
 use std::alloc::AllocErr;
+use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::Debug;
 use std::fmt::Formatter;
 use std::intrinsics::unreachable;
 use std::marker::PhantomData;
-use std::mem::{size_of, transmute};
+use std::mem::size_of;
 #[allow(deprecated)] use std::mem::uninitialized;
 use std::num::NonZeroU64;
 use std::num::NonZeroUsize;
@@ -78,6 +79,7 @@ include!("ParentInstructingChild.rs");
 include!("ResumeOutcome.rs");
 include!("StartOutcome.rs");
 include!("TaggedRelativePointerToData.rs");
+include!("UserBits.rs");
 include!("Yielder.rs");
 
 

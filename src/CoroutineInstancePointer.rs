@@ -32,7 +32,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	#[inline(always)]
 	pub unsafe fn from_handle(coroutine_instance_handle: CoroutineInstanceHandle) -> Self
 	{
-		Self(transmute(coroutine_instance_handle))
+		Self(TaggedRelativePointerToData::from_handle(coroutine_instance_handle))
 	}
 	
 	/// Only returns `Some()` if the generation matches.
@@ -58,12 +58,6 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 	
 	#[inline(always)]
-	fn as_coroutine_instance_handle(self) -> CoroutineInstanceHandle
-	{
-		self.0.handle()
-	}
-	
-	#[inline(always)]
 	unsafe fn as_mut_unchecked(self, allocator: &CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>) -> &mut CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
 	{
 		&mut * self.into_absolute_pointer(allocator).as_ptr()
@@ -79,6 +73,12 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	#[inline(always)]
 	fn was_generation(self) -> CoroutineGenerationCounter
 	{
-		CoroutineGenerationCounter(self.0.tag())
+		self.as_coroutine_instance_handle().generation()
+	}
+	
+	#[inline(always)]
+	fn as_coroutine_instance_handle(self) -> CoroutineInstanceHandle
+	{
+		self.0.handle()
 	}
 }

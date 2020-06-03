@@ -23,7 +23,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 			|coroutine_instance|
 			{
 				let generation = CoroutineInstance::constructor(coroutine_instance, coroutine_information);
-				CoroutineInstancePointer(TaggedRelativePointerToData::new(generation.0, coroutine_instance, base_pointer))
+				CoroutineInstancePointer(TaggedRelativePointerToData::new(true, UserBits::Zero, generation, coroutine_instance, base_pointer))
 			},
 			|| AllocErr
 		)

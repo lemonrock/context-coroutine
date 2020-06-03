@@ -2,15 +2,31 @@
 // Copyright © 2020 The developers of linux-support. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/linux-support/master/COPYRIGHT.
 
 
-/// Uses a tagged pointer scheme to a maximum of 2^32 different instances of the same struct.
+/// Uses a tagged pointer scheme of 64 bits packed into an `u64` giving a total of 2^24 (16 million) possible coroutines.
+///
+/// The actual layout might change
+///
+/// ```bo
+/// ┌──────────────┬──────────┬───────────┬────────────┬────────┐
+/// │      63      │ 62 …  52 │ 51  …  48 │ 47   …  24 │ 23 … 0 │
+/// ├──────────────┼──────────┼───────────┼────────────┼────────┤
+/// │ Is Coroutine │ Reserved │ User Bits │ Generation │ Index  │
+/// └──────────────┴──────────┴───────────┴────────────┴────────┘
+/// ```
+/// * `Is Coroutine`: if set (`1`), then bits `62 … 0` have meaning as defined above.
+/// * `Reserved`: bits reserved for future use or expansion
+/// * `User Bits`: Currently, 4 bits available for coroutine user state notification; always zero when a coroutine is passed this data.
+/// * `Generation`: A counter used to avoid the ABA problem when re-using memory for coroutines where the `Index` may have previously been used, eg in user data passed to epoll or io_uring.
+/// * `Index`: A relative index to a coroutine in memory.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-struct TaggedRelativePointerToData<T: Sized>(u64, PhantomData<T>);
+struct TaggedRelativePointerToData<T: Sized>(CoroutineInstanceHandle, PhantomData<T>);
 
 impl<T: Sized> Debug for TaggedRelativePointerToData<T>
 {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result
 	{
-		write!(f, "TaggedRelativePointerToData {{ tag: {}, relative_index: {} }} )", self.tag(), self.relative_index_value())
+		write!(f, "TaggedRelativePointerToData({:?})", self.0)
 	}
 }
 
@@ -29,61 +45,30 @@ impl<T: Sized> Copy for TaggedRelativePointerToData<T>
 
 impl<T: Sized> TaggedRelativePointerToData<T>
 {
-	const BitsInAByte: u64 = 8;
-	
-	const TagBitShift: u64 = (size_of::<u32>() as u64) * Self::BitsInAByte;
-	
-	const RelativeIndexBitMask: u64 = (1 << Self::TagBitShift) - 1;
-	
-	const SizeOfT: u64 = size_of::<T>() as u64;
+	#[inline(always)]
+	fn new(is_coroutine: bool, user_bits: UserBits, generation: CoroutineGenerationCounter, pointer: NonNull<T>, base_pointer: NonNull<T>) -> Self
+	{
+		Self
+		(
+			CoroutineInstanceHandle::new::<T>(is_coroutine, user_bits, generation, pointer, base_pointer),
+			PhantomData,
+		)
+	}
 	
 	#[inline(always)]
-	fn new(tag: u32, pointer: NonNull<T>, base_pointer: NonNull<T>) -> Self
+	unsafe fn from_handle(coroutine_instance_handle: CoroutineInstanceHandle) -> Self
 	{
-		let tag = (tag as u64) << Self::TagBitShift;
-		Self(tag | (Self::relative_index(pointer, base_pointer) as u64), PhantomData)
+		Self(coroutine_instance_handle, PhantomData)
 	}
 	
 	#[inline(always)]
 	fn into_absolute_pointer_from(self, mapped_memory_containing_pointer: &MappedMemory) -> NonNull<T>
 	{
-		self.into_absolute_pointer(mapped_memory_containing_pointer.virtual_address().into())
+		self.0.into_absolute_pointer::<T>(mapped_memory_containing_pointer.virtual_address().into())
 	}
 	
 	#[inline(always)]
-	fn into_absolute_pointer(self, base_pointer: NonNull<T>) -> NonNull<T>
-	{
-		let relative_index = self.relative_index_value();
-		let relative_pointer = relative_index * Self::SizeOfT;
-		unsafe { NonNull::new_unchecked(base_pointer.as_ptr().add(relative_pointer as usize)) }
-	}
-	
-	#[inline(always)]
-	fn relative_index_value(self) -> u64
-	{
-		self.0 & Self::RelativeIndexBitMask
-	}
-	
-	#[inline(always)]
-	fn tag(self) -> u32
-	{
-		(self.0 >> Self::TagBitShift) as u32
-	}
-	
-	#[inline(always)]
-	fn relative_index(larger: NonNull<T>, smaller: NonNull<T>) -> u64
-	{
-		cfn_debug_assert!(larger >= smaller);
-		
-		let difference = ((larger.as_ptr() as usize) - (smaller.as_ptr() as usize)) as u64;
-		let relative_index = difference / Self::SizeOfT;
-		cfn_debug_assert!(relative_index <= u32::MAX as u64);
-		
-		relative_index
-	}
-	
-	#[inline(always)]
-	fn handle(self) -> u64
+	fn handle(self) -> CoroutineInstanceHandle
 	{
 		self.0
 	}
