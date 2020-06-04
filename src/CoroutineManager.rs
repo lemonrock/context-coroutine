@@ -11,15 +11,7 @@ pub struct CoroutineManager<HeapSize: MemorySize, StackSize: MemorySize, GTACSA:
 
 impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineManager<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
 {
-	/// Starts the coroutine; execution will transfer to the coroutine.
-	///
-	/// Execution does not start (returns `Err(AllocErr)`) if there is not memory available to start the coroutine.
-	///
-	/// Ownership of `start_arguments` will also transfer.
-	///
-	/// Returns the data transferred to us after the start and a guard object (`StartOutcome<C>`) to resume the coroutine again or the final result.
-	///
-	/// If the coroutine panicked, this panics.
+	/// New instance.
 	#[inline(always)]
 	pub fn new(global_allocator: &'static GTACSA, ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultPageSizeAndHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
 	{
