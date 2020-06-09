@@ -14,7 +14,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 	
 	#[inline(always)]
-	fn new_coroutine_instance(&mut self, coroutine_information: CoroutineInformation) -> Result<CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, AllocErr>
+	fn new_coroutine_instance(&mut self, our_coroutine_manager_index: CoroutineManagerIndex, coroutine_information: CoroutineInformation) -> Result<CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, AllocErr>
 	{
 		let base_pointer: NonNull<CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>> = self.0.virtual_address().into();
 		
@@ -23,7 +23,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 			|coroutine_instance|
 			{
 				let generation = CoroutineInstance::constructor(coroutine_instance, coroutine_information);
-				CoroutineInstancePointer(TaggedRelativePointerToData::new(true, UserBits::Zero, generation, coroutine_instance, base_pointer))
+				CoroutineInstancePointer(TaggedRelativePointerToData::new(true, our_coroutine_manager_index, UserBits::Zero, generation, coroutine_instance, base_pointer))
 			},
 			|| AllocErr
 		)

@@ -3,11 +3,11 @@
 
 
 /// Outcome of a coroutine's start.
-pub enum StartOutcome<C: Coroutine>
+pub enum StartOutcome<Yields: Sized, Complete: Sized>
 {
 	/// Coroutine has returned an intermediate result and would to resume.
-	WouldLikeToResume(C::Yields),
+	WouldLikeToResume(Yields),
 
 	/// Coroutine has completed.
-	Complete(C::Complete),
+	Complete(Complete),
 }

@@ -46,11 +46,11 @@ impl<T: Sized> Copy for TaggedRelativePointerToData<T>
 impl<T: Sized> TaggedRelativePointerToData<T>
 {
 	#[inline(always)]
-	fn new(is_coroutine: bool, user_bits: UserBits, generation: CoroutineGenerationCounter, pointer: NonNull<T>, base_pointer: NonNull<T>) -> Self
+	fn new(is_coroutine: bool, coroutine_manager_index: CoroutineManagerIndex, user_bits: UserBits, generation: CoroutineGenerationCounter, pointer: NonNull<T>, base_pointer: NonNull<T>) -> Self
 	{
 		Self
 		(
-			CoroutineInstanceHandle::new::<T>(is_coroutine, user_bits, generation, pointer, base_pointer),
+			CoroutineInstanceHandle::new::<T>(is_coroutine, coroutine_manager_index, user_bits, generation, pointer, base_pointer),
 			PhantomData,
 		)
 	}

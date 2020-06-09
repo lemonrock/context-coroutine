@@ -4,11 +4,11 @@
 
 /// Outcome of a coroutine's resumption.
 #[derive(Debug)]
-pub enum ResumeOutcome<C: Coroutine>
+pub enum ResumeOutcome<Yields: Sized, Complete: Sized>
 {
 	/// Coroutine has returned an intermediate result and would to resume.
-	WouldLikeToResume(C::Yields),
+	WouldLikeToResume(Yields),
 
 	/// Coroutine has completed.
-	Complete(C::Complete),
+	Complete(Complete),
 }

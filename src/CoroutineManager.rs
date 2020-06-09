@@ -6,14 +6,17 @@
 pub struct CoroutineManager<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized>
 {
 	global_allocator: &'static GTACSA,
-	coroutine_instance_allocator: CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+	coroutine_instance_allocator: CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>,
+	index: CoroutineManagerIndex,
 }
 
 impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineManager<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
 {
 	/// New instance.
+	///
+	/// `index` is a zero-based value used when looking up coroutines when they are encoded in tokens or user data for use with epoll or io_uring.
 	#[inline(always)]
-	pub fn new(global_allocator: &'static GTACSA, ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultPageSizeAndHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
+	pub fn new(index: CoroutineManagerIndex, global_allocator: &'static GTACSA, ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultPageSizeAndHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
 	{
 		Ok
 		(
@@ -21,6 +24,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 			{
 				global_allocator,
 				coroutine_instance_allocator: CoroutineInstanceAllocator::new(ideal_maximum_number_of_coroutines, defaults)?,
+				index,
 			}
 		)
 	}
@@ -31,23 +35,23 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	///
 	/// Ownership of `start_arguments` will also transfer.
 	///
-	/// Returns the data transferred to us after the start and a guard object (`StartOutcome<C>`) to resume the coroutine again or the final result.
+	/// Returns the data transferred to us after the start and a guard object (`StartOutcome<C::Yields, C::Complete>`) to resume the coroutine again or the final result.
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
-	pub fn start_coroutine(&mut self, coroutine_information: CoroutineInformation, start_arguments: C::StartArguments) -> Result<StartOutcome<C>, AllocErr>
+	pub fn start_coroutine(&mut self, coroutine_information: CoroutineInformation, start_arguments: C::StartArguments) -> Result<StartOutcome<C::Yields, C::Complete>, AllocErr>
 	{
-		let coroutine_instance_pointer = self.coroutine_instance_allocator.new_coroutine_instance(coroutine_information)?;
+		let coroutine_instance_pointer = self.coroutine_instance_allocator.new_coroutine_instance(self.index, coroutine_information)?;
 		Ok(CoroutineInstance::start(coroutine_instance_pointer, &mut self.coroutine_instance_allocator, self.global_allocator, start_arguments))
 	}
 	
 	/// Ownership of `resume_arguments` will also transfer.
 	///
-	/// Returns the data transferred to us after the resume and a guard object (`ResumeOutcome<C>`) to resume the coroutine again or the final result.
+	/// Returns the data transferred to us after the resume and a guard object (`ResumeOutcome<C::Yields, C::Complete>`) to resume the coroutine again or the final result.
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
-	pub fn resume_coroutine(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, resume_arguments: C::ResumeArguments) -> ResumeOutcome<C>
+	pub fn resume_coroutine(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, resume_arguments: C::ResumeArguments) -> ResumeOutcome<C::Yields, C::Complete>
 	{
 		CoroutineInstance::resume(coroutine_instance_pointer, &mut self.coroutine_instance_allocator, self.global_allocator, resume_arguments)
 	}
@@ -57,5 +61,13 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	pub fn cancel_coroutine(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>)
 	{
 		self.coroutine_instance_allocator.free_coroutine_instance(coroutine_instance_pointer)
+	}
+	
+	#[cfg(debug_assertions)]
+	#[doc(hidden)]
+	#[inline(always)]
+	pub fn has_index(&self, index: CoroutineManagerIndex) -> bool
+	{
+		self.index == index
 	}
 }

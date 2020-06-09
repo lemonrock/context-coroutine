@@ -8,13 +8,18 @@ pub struct CoroutineInstanceHandle(u64);
 
 impl CoroutineInstanceHandle
 {
+	// Using the very topmost bit allows us to use regular pointers if the bit is clear.
 	const IsCoroutineBitCount: u64 = 1;
 	const IsCoroutineBitShift: u64 = 63;
 	const IsCoroutineBitMask: u64 = Self::bit_mask(Self::IsCoroutineBitCount, Self::IsCoroutineBitShift);
 	
-	#[allow(dead_code)] const ReservedBitCount: u64 = 11;
-	#[allow(dead_code)] const ReservedBitShift: u64 = Self::UserBitsBitCount + Self::UserBitsBitShift;
+	#[allow(dead_code)] const ReservedBitCount: u64 = 3;
+	#[allow(dead_code)] const ReservedBitShift: u64 = Self::CoroutineManagerIndexBitCount + Self::CoroutineManagerIndexBitShift;
 	#[allow(dead_code)] const ReservedBitMask: u64 = Self::bit_mask(Self::ReservedBitCount, Self::ReservedBitShift);
+	
+	const CoroutineManagerIndexBitCount: u64 = 8;
+	const CoroutineManagerIndexBitShift: u64 = Self::UserBitsBitCount + Self::UserBitsBitShift;
+	const CoroutineManagerIndexBitMask: u64 = Self::bit_mask(Self::ReservedBitCount, Self::ReservedBitShift);
 	
 	const UserBitsBitCount: u64 = 4;
 	const UserBitsBitShift: u64 = Self::GenerationBitCount + Self::GenerationBitShift;
@@ -28,10 +33,18 @@ impl CoroutineInstanceHandle
 	const IndexBitShift: u64 = 0;
 	const IndexBitMask: u64 = Self::bit_mask(Self::IndexBitCount, Self::IndexBitShift);
 	
+	/// Wrap user data from epoll or io_uring.
 	#[inline(always)]
-	fn new<T: Sized>(is_coroutine: bool, user_bits: UserBits, generation: CoroutineGenerationCounter, pointer: NonNull<T>, base_pointer: NonNull<T>) -> Self
+	pub const fn wrap(user_data: u64) -> Self
+	{
+		Self(user_data)
+	}
+	
+	#[inline(always)]
+	fn new<T: Sized>(is_coroutine: bool, coroutine_manager_index: CoroutineManagerIndex, user_bits: UserBits, generation: CoroutineGenerationCounter, pointer: NonNull<T>, base_pointer: NonNull<T>) -> Self
 	{
 		let is_coroutine_unshifted = is_coroutine as u64;
+		let coroutine_manager_index = coroutine_manager_index.0 as u64;
 		let user_bits_unshifted = user_bits.0 as u64;
 		let generation_unshifted = generation.0 as u64;
 		let index_unshifted = Self::calculate_index::<T>(pointer, base_pointer);
@@ -39,17 +52,32 @@ impl CoroutineInstanceHandle
 		Self
 		(
 			is_coroutine_unshifted << Self::IsCoroutineBitCount
+			| coroutine_manager_index << Self::CoroutineManagerIndexBitShift
 			| user_bits_unshifted << Self::UserBitsBitShift
 			| generation_unshifted << Self::GenerationBitShift
 			| index_unshifted << Self::IndexBitShift
 		)
 	}
 	
-	/// Is coroutine?
+	/// Is not for a coroutine?
+	#[inline(always)]
+	pub const fn is_not_for_a_coroutine(user_data: u64) -> bool
+	{
+		user_data & Self::IsCoroutineBitMask == 0
+	}
+	
+	/// Is for a coroutine?
 	#[inline(always)]
 	pub const fn is_coroutine(self) -> bool
 	{
 		self.0 & Self::IsCoroutineBitMask != 0
+	}
+	
+	/// Coroutine manager index.
+	#[inline(always)]
+	pub const fn coroutine_manager_index(self) -> CoroutineManagerIndex
+	{
+		CoroutineManagerIndex(((self.0 & Self::CoroutineManagerIndexBitMask) >> Self::CoroutineManagerIndexBitShift) as u8)
 	}
 	
 	/// User bits.

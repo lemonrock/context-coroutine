@@ -42,7 +42,7 @@ assert_cfg!(target_pointer_width = "64");
 use self::context::*;
 use self::stacks::*;
 use const_fn_assert::cfn_debug_assert;
-use context_allocator::allocators::global::*;
+use context_allocator::*;
 use context_allocator::memory_sources::*;
 use likely::*;
 use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
@@ -67,6 +67,9 @@ use std::ptr::write;
 use std::thread;
 
 
+include!("choose_coroutine_manager.rs");
+
+
 include!("ChildOutcome.rs");
 include!("Coroutine.rs");
 include!("CoroutineGenerationCounter.rs");
@@ -75,6 +78,7 @@ include!("CoroutineInstanceAllocator.rs");
 include!("CoroutineInstanceHandle.rs");
 include!("CoroutineInstancePointer.rs");
 include!("CoroutineManager.rs");
+include!("CoroutineManagerIndex.rs");
 include!("ParentInstructingChild.rs");
 include!("ResumeOutcome.rs");
 include!("StartOutcome.rs");

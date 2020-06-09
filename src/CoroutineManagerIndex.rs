@@ -2,40 +2,16 @@
 // Copyright © 2020 The developers of linux-support. See the COPYRIGHT file in the top-level directory of this distribution and at https://raw.githubusercontent.com/lemonrock/linux-support/master/COPYRIGHT.
 
 
-/// A 4-bit value.
+/// An 8-bit value.
 #[derive(Default, Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
-pub struct UserBits(u8);
+pub struct CoroutineManagerIndex(pub u8);
 
-impl TryFrom<u8> for UserBits
-{
-	type Error = ();
-	
-	#[inline(always)]
-	fn try_from(four_bits: u8) -> Result<Self, Self::Error>
-	{
-		if likely!((four_bits | 0x0F) == four_bits)
-		{
-			Ok(Self(four_bits))
-		}
-		else
-		{
-			Err(())
-		}
-	}
-}
-
-impl Into<u8> for UserBits
+impl Into<usize> for CoroutineManagerIndex
 {
 	#[inline(always)]
-	fn into(self) -> u8
+	fn into(self) -> usize
 	{
-		self.0
+		self.0 as usize
 	}
-}
-
-impl UserBits
-{
-	/// Zero.
-	pub const Zero: Self = Self(0);
 }

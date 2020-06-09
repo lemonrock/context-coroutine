@@ -113,7 +113,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: GlobalThreadAndCorouti
 	}
 
 	#[inline(always)]
-	fn start(coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, coroutine_instance_allocator: &mut CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, global_allocator: &'static GTACSA, start_arguments: C::StartArguments) -> StartOutcome<C>
+	fn start(coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, coroutine_instance_allocator: &mut CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, global_allocator: &'static GTACSA, start_arguments: C::StartArguments) -> StartOutcome<C::Yields, C::Complete>
 	{
 		let coroutine_instance_handle = coroutine_instance_pointer.as_coroutine_instance_handle();
 		
@@ -149,7 +149,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: GlobalThreadAndCorouti
 	}
 
 	#[inline(always)]
-	fn resume(coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, coroutine_instance_allocator: &mut CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, global_allocator: &'static GTACSA, resume_arguments: C::ResumeArguments) -> ResumeOutcome<C>
+	fn resume(coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, coroutine_instance_allocator: &mut CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, global_allocator: &'static GTACSA, resume_arguments: C::ResumeArguments) -> ResumeOutcome<C::Yields, C::Complete>
 	{
 		let this = unsafe { coroutine_instance_pointer.as_mut_unchecked(coroutine_instance_allocator) };
 		this.pre_transfer_control_to_coroutine(global_allocator);
