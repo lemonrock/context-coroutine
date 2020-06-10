@@ -6,11 +6,11 @@
 ///
 /// All other fields except for "Initialized once in `initializer()`" must be safe to drop ***REGARDLESS*** of whether they have been initialized.
 #[derive(Debug)]
-struct CoroutineInstance<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized>
+struct CoroutineInstance<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized>
 {
 	// Never initialized.
-	heap: CoroutineHeapMemory<HeapSize>,
-	stack: CoroutineStackMemory<StackSize>,
+	heap: CoroutineHeapMemory<CoroutineHeapSize>,
+	stack: CoroutineStackMemory<CoroutineStackSize>,
 	
 	// Initialized once in `initializer()`.
 	// Updated on `free()`.
@@ -27,7 +27,7 @@ struct CoroutineInstance<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 's
 	coroutine_information: CoroutineInformation,
 }
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> Drop for CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> Drop for CoroutineInstance<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>
 {
 	#[inline(always)]
 	fn drop(&mut self)
@@ -36,7 +36,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 }
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> LargeRingQueueElement for CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> LargeRingQueueElement for CoroutineInstance<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>
 {
 	const Initialization: LargeRingQueueInitialization<Self> = LargeRingQueueInitialization::CreateFullUsingInitializer(Self::initializer);
 	
@@ -69,7 +69,7 @@ macro_rules! get_field
 	}
 }
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstance<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>
 {
 	#[inline(always)]
 	unsafe fn initialize_field<Field: Sized>(field: &mut Field, value_to_initialize_field_with: Field)
@@ -78,7 +78,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: GlobalThreadAndCorouti
 	}
 	
 	#[inline(always)]
-	unsafe fn initializer(_index: u64, mut non_null_coroutine_instance: NonNull<CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>>)
+	unsafe fn initializer(_index: u64, mut non_null_coroutine_instance: NonNull<CoroutineInstance<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>>)
 	{
 		initialize_field!(non_null_coroutine_instance, generation, CoroutineGenerationCounter::default())
 	}
@@ -86,8 +86,8 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: GlobalThreadAndCorouti
 	#[inline(always)]
 	fn constructor(mut non_null_coroutine_instance: NonNull<Self>, coroutine_information: CoroutineInformation) -> CoroutineGenerationCounter
 	{
-		let heap: &CoroutineHeapMemory<HeapSize> = get_field!(non_null_coroutine_instance, heap);
-		let stack: &CoroutineStackMemory<StackSize> = get_field!(non_null_coroutine_instance, stack);
+		let heap: &CoroutineHeapMemory<CoroutineHeapSize> = get_field!(non_null_coroutine_instance, heap);
+		let stack: &CoroutineStackMemory<CoroutineStackSize> = get_field!(non_null_coroutine_instance, stack);
 		let generation: CoroutineGenerationCounter = *get_field!(non_null_coroutine_instance, generation);
 		
 		let coroutine_local_allocator = Some(GTACSA::CoroutineLocalAllocator::new_local_allocator(heap.into_memory_source(), C::LifetimeHint, C::HeapMemoryAllocatorBlockSizeHint));
@@ -96,8 +96,8 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: GlobalThreadAndCorouti
 		{
 			let stack_bottom =
 			{
-				let size = size_of::<CoroutineStackMemory<StackSize>>();
-				unsafe { (stack as *const CoroutineStackMemory<StackSize> as *const u8).add(size) }
+				let size = size_of::<CoroutineStackMemory<CoroutineStackSize>>();
+				unsafe { (stack as *const CoroutineStackMemory<CoroutineStackSize> as *const u8).add(size) }
 			};
 			TypeSafeTransfer::new(stack_bottom, C::context_entry_point_function_pointer)
 		};
@@ -113,7 +113,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: GlobalThreadAndCorouti
 	}
 
 	#[inline(always)]
-	fn start(coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, coroutine_instance_allocator: &mut CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, global_allocator: &'static GTACSA, start_arguments: C::StartArguments) -> StartOutcome<C::Yields, C::Complete>
+	fn start(coroutine_instance_pointer: CoroutineInstancePointer<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>, coroutine_instance_allocator: &mut CoroutineInstanceAllocator<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>, global_allocator: &'static GTACSA, start_arguments: C::StartArguments) -> StartOutcome<C::Yields, C::Complete>
 	{
 		let coroutine_instance_handle = coroutine_instance_pointer.as_coroutine_instance_handle();
 		
@@ -149,7 +149,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: GlobalThreadAndCorouti
 	}
 
 	#[inline(always)]
-	fn resume(coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, coroutine_instance_allocator: &mut CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, global_allocator: &'static GTACSA, resume_arguments: C::ResumeArguments) -> ResumeOutcome<C::Yields, C::Complete>
+	fn resume(coroutine_instance_pointer: CoroutineInstancePointer<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>, coroutine_instance_allocator: &mut CoroutineInstanceAllocator<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>, global_allocator: &'static GTACSA, resume_arguments: C::ResumeArguments) -> ResumeOutcome<C::Yields, C::Complete>
 	{
 		let this = unsafe { coroutine_instance_pointer.as_mut_unchecked(coroutine_instance_allocator) };
 		this.pre_transfer_control_to_coroutine(global_allocator);

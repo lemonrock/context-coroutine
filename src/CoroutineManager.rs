@@ -3,14 +3,14 @@
 
 
 /// Manages a particular type of coroutine.
-pub struct CoroutineManager<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized>
+pub struct CoroutineManager<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized>
 {
 	global_allocator: &'static GTACSA,
-	coroutine_instance_allocator: CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>,
+	coroutine_instance_allocator: CoroutineInstanceAllocator<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>,
 	index: CoroutineManagerIndex,
 }
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineManager<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineManager<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>
 {
 	/// New instance.
 	///
@@ -51,14 +51,14 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
-	pub fn resume_coroutine(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, resume_arguments: C::ResumeArguments) -> ResumeOutcome<C::Yields, C::Complete>
+	pub fn resume_coroutine(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>, resume_arguments: C::ResumeArguments) -> ResumeOutcome<C::Yields, C::Complete>
 	{
 		CoroutineInstance::resume(coroutine_instance_pointer, &mut self.coroutine_instance_allocator, self.global_allocator, resume_arguments)
 	}
 	
 	/// Cancels (kills) an active, but not running, coroutine awaiting its resumption and frees memory.
 	#[inline(always)]
-	pub fn cancel_coroutine(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>)
+	pub fn cancel_coroutine(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>)
 	{
 		self.coroutine_instance_allocator.free_coroutine_instance(coroutine_instance_pointer)
 	}

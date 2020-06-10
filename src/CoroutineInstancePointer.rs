@@ -3,9 +3,9 @@
 
 
 /// A pointer to a CoroutineInstance.
-pub struct CoroutineInstancePointer<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized>(TaggedRelativePointerToData<CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>>);
+pub struct CoroutineInstancePointer<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized>(TaggedRelativePointerToData<CoroutineInstance<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>>);
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> Debug for CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> Debug for CoroutineInstancePointer<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>
 {
 	fn fmt(&self, f: &mut Formatter) -> fmt::Result
 	{
@@ -13,7 +13,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 }
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> Clone for CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> Clone for CoroutineInstancePointer<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>
 {
 	#[inline(always)]
 	fn clone(&self) -> Self
@@ -22,11 +22,11 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 }
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> Copy for CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> Copy for CoroutineInstancePointer<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>
 {
 }
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstancePointer<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>
 {
 	/// From a `CoroutineInstanceHandle`.
 	#[inline(always)]
@@ -41,7 +41,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	///
 	/// This can happen if using `CoroutineInstancePointer` with epoll or io_uring as user data (a user token).
 	#[inline(always)]
-	fn pointer(self, allocator: &CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>) -> Option<NonNull<CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>>>
+	fn pointer(self, allocator: &CoroutineInstanceAllocator<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>) -> Option<NonNull<CoroutineInstance<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>>>
 	{
 		let absolute_pointer = self.into_absolute_pointer(allocator);
 		
@@ -58,14 +58,14 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 	
 	#[inline(always)]
-	unsafe fn as_mut_unchecked(self, allocator: &CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>) -> &mut CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+	unsafe fn as_mut_unchecked(self, allocator: &CoroutineInstanceAllocator<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>) -> &mut CoroutineInstance<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>
 	{
 		&mut * self.into_absolute_pointer(allocator).as_ptr()
 	}
 	
 	/// Only returns `Some()` if the generation matches.
 	#[inline(always)]
-	fn into_absolute_pointer(self, allocator: &CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>) -> NonNull<CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>>
+	fn into_absolute_pointer(self, allocator: &CoroutineInstanceAllocator<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>) -> NonNull<CoroutineInstance<CoroutineHeapSize, CoroutineStackSize, GTACSA, C, CoroutineInformation>>
 	{
 		self.0.into_absolute_pointer_from(allocator.mapped_memory())
 	}

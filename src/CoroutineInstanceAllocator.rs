@@ -3,9 +3,9 @@
 
 
 /// Allocator of coroutine instances.
-struct CoroutineInstanceAllocator<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized>(LargeRingQueue<CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>>);
+struct CoroutineInstanceAllocator<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized>(LargeRingQueue<CoroutineInstance<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>>);
 
-impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<HeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstanceAllocator<HeapSize, StackSize, GTACSA, C, CoroutineInformation>
+impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstanceAllocator<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>
 {
 	#[inline(always)]
 	fn new(ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultPageSizeAndHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
@@ -14,9 +14,9 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 	
 	#[inline(always)]
-	fn new_coroutine_instance(&mut self, our_coroutine_manager_index: CoroutineManagerIndex, coroutine_information: CoroutineInformation) -> Result<CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>, AllocErr>
+	fn new_coroutine_instance(&mut self, our_coroutine_manager_index: CoroutineManagerIndex, coroutine_information: CoroutineInformation) -> Result<CoroutineInstancePointer<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>, AllocErr>
 	{
-		let base_pointer: NonNull<CoroutineInstance<HeapSize, StackSize, GTACSA, C, CoroutineInformation>> = self.0.virtual_address().into();
+		let base_pointer: NonNull<CoroutineInstance<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>> = self.0.virtual_address().into();
 		
 		self.0.obtain_and_map
 		(
@@ -30,7 +30,7 @@ impl<HeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThread
 	}
 	
 	#[inline(always)]
-	fn free_coroutine_instance(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<HeapSize, StackSize, GTACSA, C, CoroutineInformation>)
+	fn free_coroutine_instance(&mut self, coroutine_instance_pointer: CoroutineInstancePointer<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>)
 	{
 		if let Some(non_null_coroutine_instance) = coroutine_instance_pointer.pointer(self)
 		{
