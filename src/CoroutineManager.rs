@@ -3,6 +3,7 @@
 
 
 /// Manages a particular type of coroutine.
+#[derive(Debug)]
 pub struct CoroutineManager<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized>
 {
 	global_allocator: &'static GTACSA,

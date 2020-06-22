@@ -5,6 +5,15 @@
 /// Allocator of coroutine instances.
 struct CoroutineInstanceAllocator<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized>(LargeRingQueue<CoroutineInstance<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>>);
 
+impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> Debug for CoroutineInstanceAllocator<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>
+{
+	#[inline(always)]
+	fn fmt(&self, f: &mut Formatter) -> fmt::Result
+	{
+		write!(f, "CoroutineInstanceAllocator")
+	}
+}
+
 impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstanceAllocator<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>
 {
 	#[inline(always)]
