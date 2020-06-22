@@ -40,6 +40,13 @@ impl CoroutineInstanceHandle
 		Self(user_data)
 	}
 	
+	/// Unwrap to user data for epoll or io_uring.
+	#[inline(always)]
+	pub const fn unwrap(self) -> u64
+	{
+		self.0
+	}
+	
 	#[inline(always)]
 	fn new<T: Sized>(is_coroutine: bool, coroutine_manager_index: CoroutineManagerIndex, user_bits: UserBits, generation: CoroutineGenerationCounter, pointer: NonNull<T>, base_pointer: NonNull<T>) -> Self
 	{

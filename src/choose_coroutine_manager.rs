@@ -31,7 +31,7 @@
 #[macro_export]
 macro_rules! choose_coroutine_manager
 {
-    ($actual_coroutine_manager_index: expr, $callback: expr, $arguments: expr, $coroutine_manager_fields: expr, $($coroutine_manager_index: expr => $coroutine_manager_field_name: ident,)* ) =>
+    ($actual_coroutine_manager_index: expr, $callback: ident, $arguments: expr, $coroutine_manager_fields: expr, $($coroutine_manager_index: expr => $coroutine_manager_field_name: ident,)* ) =>
     {
         match $actual_coroutine_manager_index
         {
@@ -40,7 +40,7 @@ macro_rules! choose_coroutine_manager
                 {
                 	let coroutine_manager = &mut $coroutine_manager_fields.$coroutine_manager_field_name;
                 	
-                	debug_assert!(coroutine_manager.has_index(CoroutineManagerIndex($coroutine_manager_index)))
+                	debug_assert!(coroutine_manager.has_index(CoroutineManagerIndex($coroutine_manager_index)));
                 
                 	coroutine_manager.$callback($arguments)
                 }
