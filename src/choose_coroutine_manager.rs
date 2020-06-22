@@ -5,21 +5,6 @@
 
 /// Use it like this:-
 /// ```rust
-/// choose_coroutine_manager!
-/// {
-/// 	coroutine_manager_index,
-/// 	some_coroutine_manager_fields,
-/// 	arguments,
-/// 	0 => accept_ipv4,
-/// 	1 => accept_ipv6,
-/// }
-/// ```
-///
-/// `some_coroutine_manager_fields` will need to be mutable.
-/// `accept_ipv4` is a field that exists on `some_coroutine_manager_fields`.
-///
-/// eg
-/// ```rust
 /// use context_coroutine::CoroutineManagerIndex;
 /// use linux_support::file_descriptors::socket::c::sockaddr_in;
 /// use linux_support::file_descriptors::socket::c::sockaddr_in6;
@@ -35,8 +20,9 @@
 /// 	choose_coroutine_manager!
 /// 	{
 /// 		coroutine_manager_index,
-/// 		some_coroutine_manager_fields,
 /// 		(arg1, arg2),
+/// 		callback_on_coroutine_manager_mutable_instance,
+/// 		some_coroutine_manager_fields,
 /// 		0 => accept_ipv4 @ SomeModule::callback,
 /// 		1 => accept_ipv6 @ local_function,
 /// 	}
@@ -45,7 +31,7 @@
 #[macro_export]
 macro_rules! choose_coroutine_manager
 {
-    ($coroutine_manager_fields: expr, $actual_coroutine_manager_index: expr, $arguments: expr, $($coroutine_manager_index: expr => $coroutine_manager_field_name: ident @ $callback: path,)* ) =>
+    ($actual_coroutine_manager_index: expr, $callback: expr, $arguments: expr, $coroutine_manager_fields: expr, $($coroutine_manager_index: expr => $coroutine_manager_field_name: ident,)* ) =>
     {
         match $actual_coroutine_manager_index
         {
@@ -56,7 +42,7 @@ macro_rules! choose_coroutine_manager
                 	
                 	debug_assert!(coroutine_manager.has_index(CoroutineManagerIndex($coroutine_manager_index)))
                 
-                    $callback(coroutine_manager, $arguments)
+                	coroutine_manager.$callback($arguments)
                 }
             )*
             _ => unreachable!("Unregistered"),
