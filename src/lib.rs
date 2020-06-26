@@ -11,6 +11,7 @@
 #![feature(asm)]
 #![feature(core_intrinsics)]
 #![feature(global_asm)]
+#![feature(llvm_asm)]
 #![feature(naked_functions)]
 
 

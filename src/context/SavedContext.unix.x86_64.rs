@@ -118,7 +118,7 @@ impl SavedContext
 	#[allow(unused_variables)]
 	unsafe extern "C" fn initialize(pointer_to_bottom_of_stack: *const u8, context_entry_function_pointer: ContextEntryPointFunctionPointer) -> NonNull<SavedContext>
 	{
-		asm!
+		llvm_asm!
 		(
 		"
 			// (1) Save initial context by partially initializing `SavedContext`.
@@ -180,7 +180,7 @@ impl SavedContext
 	#[allow(unused_variables)]
 	unsafe extern "C" fn resume(pointer_to_previously_saved_stack_context: NonNull<SavedContext>, data_to_transfer: DataToTransfer) -> Transfer
 	{
-		asm!
+		llvm_asm!
 		(
 		"
 			// (1) Save the current context's register and associated state onto the stack (rsp) into `pointer_to_newly_saved_stack_context` (of type `NonNull<SavedContext>`).
