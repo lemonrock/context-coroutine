@@ -32,7 +32,7 @@ pub trait Coroutine: Sized
 	/// Implement this for the coroutine's behaviour.
 	///
 	/// Panics inside the coroutine are transferred to the calling thread and raised.
-	fn coroutine<'yielder>(coroutine_instance_handle: CoroutineInstanceHandle, start_arguments: Self::StartArguments, yielder: Yielder<'yielder, Self::ResumeArguments, Self::Yields, Self::Complete>) -> Self::Complete;
+	fn coroutine<'yielder>(coroutine_instance_handle: CoroutineInstanceHandle, yielder: Yielder<'yielder, Self::ResumeArguments, Self::Yields, Self::Complete>, start_arguments: Self::StartArguments) -> Self::Complete;
 	
 	#[doc(hidden)]
 	#[inline(never)]
@@ -44,7 +44,7 @@ pub trait Coroutine: Sized
 		let result =
 		{
 			let yielder = Yielder::new(&mut type_safe_transfer);
-			catch_unwind(AssertUnwindSafe(|| Self::coroutine(coroutine_instance_handle, start_child_arguments, yielder)))
+			catch_unwind(AssertUnwindSafe(|| Self::coroutine(coroutine_instance_handle, yielder, start_child_arguments)))
 		};
 
 		type_safe_transfer.resume_drop_safe(ChildOutcome::Complete(result));

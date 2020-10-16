@@ -32,7 +32,7 @@ impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + Glo
 	
 	/// Starts the coroutine; execution will transfer to the coroutine.
 	///
-	/// Execution does not start (returns `Err(AllocErr)`) if there is not memory available to start the coroutine.
+	/// Execution does not start (returns `Err(AllocError)`) if there is not memory available to start the coroutine.
 	///
 	/// Ownership of `start_arguments` will also transfer.
 	///
@@ -40,7 +40,7 @@ impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + Glo
 	///
 	/// If the coroutine panicked, this panics.
 	#[inline(always)]
-	pub fn start_coroutine(&mut self, coroutine_information: CoroutineInformation, start_arguments: C::StartArguments) -> Result<StartOutcome<C::Yields, C::Complete>, AllocErr>
+	pub fn start_coroutine(&mut self, coroutine_information: CoroutineInformation, start_arguments: C::StartArguments) -> Result<StartOutcome<C::Yields, C::Complete>, AllocError>
 	{
 		let coroutine_instance_pointer = self.coroutine_instance_allocator.new_coroutine_instance(self.index, coroutine_information)?;
 		Ok(CoroutineInstance::start(coroutine_instance_pointer, &mut self.coroutine_instance_allocator, self.global_allocator, start_arguments))

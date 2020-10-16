@@ -50,7 +50,7 @@ use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
 use linux_support::memory::mapping::MappedMemory;
 use magic_ring_buffer::*;
 use magic_ring_buffer::memory_sizes::MemorySize;
-use std::alloc::AllocErr;
+use std::alloc::AllocError;
 use std::convert::TryFrom;
 use std::fmt;
 use std::fmt::Debug;
