@@ -45,7 +45,7 @@ macro_rules! choose_coroutine_manager
                 	coroutine_manager.$callback($arguments)
                 }
             )*
-            _ => unreachable!("Unregistered"),
+            _ => unreachable_code(format_args!("Unregistered")),
         }
     };
 }
