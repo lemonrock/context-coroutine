@@ -25,14 +25,13 @@ impl Transfer
 	/// Creates a new instance, by initializing a new context.
 	///
 	/// It is your responsibility to make sure `stack` lives longer than the generated `Self` result.
-	#[allow(deprecated)]
 	#[inline(always)]
 	pub fn new(stack: &impl Stack, context_entry_point_function_pointer: ContextEntryPointFunctionPointer) -> Self
 	{
 		Self
 		{
 			previously_executed_context_which_yielded_to_resume_the_current_context: SavedContextWrapper::initialize(stack, context_entry_point_function_pointer),
-			data_passed_from_previously_executed_context: unsafe { uninitialized() },
+			data_passed_from_previously_executed_context: unsafe_uninitialized(),
 		}
 	}
 

@@ -33,7 +33,7 @@ impl ProtectedStack
 	{
 		let page_size = PageSize::current().size_in_bytes().get();
 
-		let size_including_guard_page_but_might_be_bigger_than_maximum_stack_size = unsafe { NonZeroU64::new_unchecked(PageSize::current().non_zero_number_of_bytes_rounded_up_to_multiple_of_page_size(size).get() + page_size) };
+		let size_including_guard_page_but_might_be_bigger_than_maximum_stack_size = new_non_zero_u64(PageSize::current().non_zero_number_of_bytes_rounded_up_to_multiple_of_page_size(size).get() + page_size);
 		let size_including_guard_page = min(size_including_guard_page_but_might_be_bigger_than_maximum_stack_size, Self::maximum_stack_size());
 
 		let mapped_memory = MappedMemory::anonymous(size_including_guard_page, AddressHint::any(), Protection::ReadWrite, Sharing::Private, None, false, false, defaults)?;
@@ -55,13 +55,12 @@ impl ProtectedStack
 	#[inline(always)]
 	fn maximum_stack_size() -> NonZeroU64
 	{
-		#[allow(deprecated)]
 		#[inline(always)]
 		fn uncached_maximum_stack_size() -> NonZeroU64
 		{
 			let resource_limit = ResourceName::MaximumSizeOfProcessStackInBytes.get();
 			let maximum = resource_limit.hard_limit();
-			unsafe { NonZeroU64::new_unchecked(maximum.value()) }
+			new_non_zero_u64(maximum.value())
 		}
 
 		static MaximumStackSize: AtomicU64 = AtomicU64::new(0);
@@ -74,7 +73,7 @@ impl ProtectedStack
 		}
 		else
 		{
-			unsafe { NonZeroU64::new_unchecked(potential_maximum_stack_size) }
+			new_non_zero_u64(potential_maximum_stack_size)
 		}
 	}
 }

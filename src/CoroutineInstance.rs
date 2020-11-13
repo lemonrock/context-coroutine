@@ -32,7 +32,7 @@ impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: 'sta
 	#[inline(always)]
 	fn drop(&mut self)
 	{
-		Self::free(unsafe { NonNull::new_unchecked(self) })
+		Self::free(new_non_null(self))
 	}
 }
 

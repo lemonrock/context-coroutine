@@ -58,7 +58,6 @@ use std::fmt::Formatter;
 use std::intrinsics::unreachable;
 use std::marker::PhantomData;
 use std::mem::size_of;
-#[allow(deprecated)] use std::mem::uninitialized;
 use std::num::NonZeroU64;
 use std::num::NonZeroUsize;
 use std::panic::*;
@@ -66,6 +65,9 @@ use std::ptr::NonNull;
 use std::ptr::read;
 use std::ptr::write;
 use std::thread;
+use swiss_army_knife::non_zero::new_non_null;
+use swiss_army_knife::non_zero::new_non_zero_u64;
+use swiss_army_knife::unsafe_initialization::unsafe_uninitialized;
 
 
 include!("choose_coroutine_manager.rs");

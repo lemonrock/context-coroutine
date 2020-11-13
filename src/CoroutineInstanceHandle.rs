@@ -116,7 +116,7 @@ impl CoroutineInstanceHandle
 		let base_pointer = base_pointer.as_ptr() as usize;
 		let relative_pointer = self.relative_pointer::<T>();
 		
-		unsafe { NonNull::new_unchecked((base_pointer + relative_pointer) as *mut T) }
+		new_non_null((base_pointer + relative_pointer) as *mut T)
 	}
 	
 	#[inline(always)]

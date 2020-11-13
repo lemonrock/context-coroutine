@@ -122,7 +122,6 @@ impl<T> TransferableData for NonNull<T>
 	fn from_usize(value: usize) -> Self
 	{
 		let pointer = value as *mut T;
-		debug_assert!(!pointer.is_null(), "pointer value is null");
-		unsafe { NonNull::new_unchecked(pointer) }
+		new_non_null(pointer)
 	}
 }

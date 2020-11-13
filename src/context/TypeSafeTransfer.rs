@@ -95,6 +95,6 @@ impl<Receive: Sized, Send: Sized> TypeSafeTransfer<Receive, Send>
 	#[inline(always)]
 	fn option_to_pointer<T>(data_to_transfer_drop_safe: &mut Option<T>) -> NonNull<Option<T>>
 	{
-		unsafe { NonNull::new_unchecked(data_to_transfer_drop_safe as *mut Option<T>) }
+		new_non_null(data_to_transfer_drop_safe as *mut Option<T>)
 	}
 }
