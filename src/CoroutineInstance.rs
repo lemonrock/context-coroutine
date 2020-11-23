@@ -211,7 +211,7 @@ impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: Glob
 	#[inline(always)]
 	fn pre_transfer_control_to_coroutine(&mut self, global_allocator: &'static GTACSA)
 	{
-		self.inactive_coroutine_local_allocator = global_allocator.replace_coroutine_local_allocator(self.read_inactive_coroutine_local_allocator());
+		self.inactive_coroutine_local_allocator = global_allocator.swap_coroutine_local_allocator(self.read_inactive_coroutine_local_allocator());
 		self.inactive_current_allocator_in_use = global_allocator.replace_current_allocator_in_use(self.inactive_current_allocator_in_use);
 	}
 	
@@ -219,7 +219,7 @@ impl<CoroutineHeapSize: MemorySize, CoroutineStackSize: MemorySize, GTACSA: Glob
 	fn post_transfer_control_to_coroutine(&mut self, global_allocator: &'static GTACSA)
 	{
 		self.inactive_current_allocator_in_use = global_allocator.replace_current_allocator_in_use(self.inactive_current_allocator_in_use);
-		self.inactive_coroutine_local_allocator = global_allocator.replace_coroutine_local_allocator(self.read_inactive_coroutine_local_allocator());
+		self.inactive_coroutine_local_allocator = global_allocator.swap_coroutine_local_allocator(self.read_inactive_coroutine_local_allocator());
 	}
 	
 	/// Borrow checker hack to avoid the need to use `self.inactive_coroutine_local_allocator.take()`, which also writes-back to memory.
