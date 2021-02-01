@@ -8,6 +8,7 @@ use super::*;
 use linux_support::file_descriptors::CreationError;
 use linux_support::memory::PageSize;
 use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
+use linux_support::memory::huge_pages::PageSizeOrHugePageSizeSettings;
 use linux_support::memory::mapping::*;
 use linux_support::resource_limits::ResourceName;
 use std::cmp::min;

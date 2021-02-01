@@ -35,8 +35,9 @@ impl ProtectedStack
 
 		let size_including_guard_page_but_might_be_bigger_than_maximum_stack_size = new_non_zero_u64(PageSize::current().non_zero_number_of_bytes_rounded_up_to_multiple_of_page_size(size).get() + page_size);
 		let size_including_guard_page = min(size_including_guard_page_but_might_be_bigger_than_maximum_stack_size, Self::maximum_stack_size());
-
-		let mapped_memory = MappedMemory::anonymous(size_including_guard_page, AddressHint::any(), Protection::ReadWrite, Sharing::Private, None, false, false, defaults)?;
+		
+		let page_size_or_huge_page_size_settings = PageSizeOrHugePageSizeSettings::for_page_size(defaults);
+		let mapped_memory = MappedMemory::anonymous(size_including_guard_page, AddressHint::any(), Protection::ReadWrite, Sharing::Private, false, false, page_size_or_huge_page_size_settings)?;
 
 		// Create a guard page at the top.
 		mapped_memory.change_protection_range(ExtendedProtection::Inaccessible, 0 .. (page_size as usize)).expect("No good reason to fail");
