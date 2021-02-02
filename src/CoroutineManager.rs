@@ -17,7 +17,7 @@ impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + Glo
 	///
 	/// `index` is a zero-based value used when looking up coroutines when they are encoded in tokens or user data for use with epoll or io_uring.
 	#[inline(always)]
-	pub fn new(index: CoroutineManagerIndex, global_allocator: &'static GTACSA, ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultPageSizeAndHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
+	pub fn new(index: CoroutineManagerIndex, global_allocator: &'static GTACSA, ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
 	{
 		Ok
 		(

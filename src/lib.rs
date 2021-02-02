@@ -46,7 +46,7 @@ use const_fn_assert::cfn_debug_assert;
 use context_allocator::*;
 use context_allocator::memory_sources::*;
 use likely::*;
-use linux_support::memory::huge_pages::DefaultPageSizeAndHugePageSizes;
+use linux_support::memory::huge_pages::DefaultHugePageSizes;
 use linux_support::memory::mapping::MappedMemory;
 use magic_ring_buffer::*;
 use magic_ring_buffer::memory_sizes::MemorySize;

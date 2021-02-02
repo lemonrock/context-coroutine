@@ -17,7 +17,7 @@ impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + Glo
 impl<CoroutineHeapSize: MemorySize, StackSize: MemorySize, GTACSA: 'static + GlobalThreadAndCoroutineSwitchableAllocator<CoroutineHeapSize>, C: Coroutine, CoroutineInformation: Sized> CoroutineInstanceAllocator<CoroutineHeapSize, StackSize, GTACSA, C, CoroutineInformation>
 {
 	#[inline(always)]
-	fn new(ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultPageSizeAndHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
+	fn new(ideal_maximum_number_of_coroutines: NonZeroU64, defaults: &DefaultHugePageSizes) -> Result<Self, LargeRingQueueCreationError>
 	{
 		LargeRingQueue::new(ideal_maximum_number_of_coroutines, defaults, 0, false).map(Self)
 	}
