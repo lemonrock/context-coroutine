@@ -16,7 +16,7 @@ include = ["README.md", "LICENSE", "COPYRIGHT", "src/**/*.rs", "Cargo.toml", "ru
 readme = "README.md"
 edition = "2018"
 publish = true
-version = "3.2.0"
+version = "3.2.1"
 
 [dependencies]
 const_fn_assert = "^0.1.2"
@@ -26,5 +26,5 @@ static_assertions = "^1.1"
 context-allocator = { version = "^0.3.1", path = "../context-allocator" }
 likely = { version = "^0.2.0", path = "../likely" }
 linux-support = { version = "^0.0.10", path = "../linux-support" }
-magic-ring-buffer = { version = "^0.2.0", path = "../magic-ring-buffer" }
+magic-ring-buffer = { version = "^0.3.1", path = "../magic-ring-buffer" }
 swiss-army-knife = { version = "0.0.2", path = "../swiss-army-knife" }
